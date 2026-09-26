@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="تسجيل الدخول إلى Tech Luxury - إدارة منتجات NFC الخاصة بك">
+    <title>تسجيل الدخول | Tech Luxury</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>💎</text></svg>">
+
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="../css/auth.css">
+</head>
+<body class="auth-page">
+
+    <!-- Decorative Background -->
+    <div class="auth-bg">
+        <div class="auth-bg-glow"></div>
+        <div class="auth-bg-grid"></div>
+    </div>
+
+    <!-- Back to Home -->
+    <a href="../index.html" class="auth-back-home" aria-label="العودة للرئيسية">
+        <i class="fa-solid fa-arrow-right"></i>
+        <span>الرئيسية</span>
+    </a>
+
+    <!-- Auth Container -->
+    <main class="auth-container" role="main">
+
+        <!-- Brand -->
+        <div class="auth-brand">
+            <i class="fa-solid fa-gem"></i>
+            <span>Tech Luxury</span>
+        </div>
+
+        <!-- Header -->
+        <div class="auth-header">
+            <h1 id="formTitle">تسجيل الدخول إلى حسابك</h1>
+            <p class="auth-subtitle" id="formSubtitle">
+                أدخل بياناتك للوصول إلى لوحة التحكم
+            </p>
+        </div>
+
+        <!-- Form -->
+        <form id="authForm" novalidate>
+
+            <div class="form-group" id="nameGroup" style="display: none;">
+                <label for="fullName">
+                    <i class="fa-solid fa-user"></i>
+                    الاسم الكامل
+                </label>
+                <input
+                    type="text"
+                    id="fullName"
+                    name="fullName"
+                    placeholder="مثال: أحمد علي"
+                    autocomplete="name"
+                    maxlength="80">
+            </div>
+
+            <div class="form-group">
+                <label for="email">
+                    <i class="fa-solid fa-envelope"></i>
+                    البريد الإلكتروني
+                </label>
+                <input
+                    type="email"
+                    id="email"
+                    name="email"
+                    required
+                    placeholder="example@mail.com"
+                    autocomplete="email"
+                    inputmode="email"
+                    dir="ltr">
+            </div>
+
+            <div class="form-group">
+                <label for="password">
+                    <i class="fa-solid fa-lock"></i>
+                    كلمة السر
+                </label>
+                <div class="password-wrapper">
+                    <input
+                        type="password"
+                        id="password"
+                        name="password"
+                        required
+                        placeholder="••••••••"
+                        autocomplete="current-password"
+                        minlength="6">
+                    <button
+                        type="button"
+                        class="password-toggle"
+                        id="btnTogglePassword"
+                        aria-label="إظهار كلمة السر"
+                        tabindex="-1">
+                        <i class="fa-solid fa-eye"></i>
+                    </button>
+                </div>
+            </div>
+
+            <button type="submit" id="btnSubmit" class="btn-auth">
+                <span class="btn-auth-text">دخول</span>
+                <i class="fa-solid fa-arrow-left btn-auth-icon"></i>
+            </button>
+
+        </form>
+
+        <!-- Toggle Mode -->
+        <div class="toggle-mode">
+            <span id="toggleText">ليس لديك حساب؟</span>
+            <a id="btnToggle" role="button" tabindex="0">إنشاء حساب جديد</a>
+        </div>
+
+        <!-- Footer Note -->
+        <p class="auth-footer-note">
+            <i class="fa-solid fa-shield-halved"></i>
+            بياناتك محمية بتشفير كامل
+        </p>
+
+    </main>
+
+    <script type="module" src="../js/auth.js"></script>
+</body>
+</html>
