@@ -195,7 +195,7 @@ function toArray(value) {
 function validateFile(file, type) {
     const limits = {
         image: {
-            maxSize: 5 * 1024 * 1024,           // 5 MB
+            maxSize: 15 * 1024 * 1024,           // 5 MB
             types: ["image/jpeg", "image/jpg", "image/png", "image/webp"]
         },
         video: {
