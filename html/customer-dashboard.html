@@ -1,0 +1,649 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="لوحة تحكم Tech Luxury - إدارة منتجات NFC وذكرياتك">
+    <title>لوحة ذكرياتي | Tech Luxury</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎴</text></svg>">
+
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="../css/dashboard.css">
+</head>
+<body class="dashboard-page">
+
+    <!-- =========================
+         Top Navbar
+    ========================== -->
+    <header class="dash-navbar">
+        <div class="dash-nav-container">
+
+            <a href="../index.html" class="brand-logo">
+                <i class="fa-solid fa-gem"></i>
+                <span>Tech Luxury</span>
+            </a>
+
+            <div class="dash-user">
+                <div class="dash-user-info">
+                    <span class="dash-user-label">أهلاً بك،</span>
+                    <span class="dash-user-name" id="userName">جاري التحميل...</span>
+                </div>
+                <button id="btnLogout" class="btn-logout" aria-label="تسجيل الخروج">
+                    <i class="fa-solid fa-right-from-bracket"></i>
+                    <span>خروج</span>
+                </button>
+            </div>
+
+        </div>
+    </header>
+
+    <!-- =========================
+         Main Content
+    ========================== -->
+    <main class="dash-main">
+        <div class="container">
+
+            <!-- Welcome Banner -->
+            <section class="dash-welcome">
+                <div class="dash-welcome-content">
+                    <h1>لوحة ذكرياتي</h1>
+                    <p>أدر منتجات NFC الخاصة بك، اربط كروتاً جديدة، وأضف ذكرياتك بكل سهولة.</p>
+                </div>
+                <div class="dash-welcome-icon">
+                    <i class="fa-solid fa-wand-magic-sparkles"></i>
+                </div>
+            </section>
+
+            <!-- Claim Card Section -->
+            <section class="claim-card-section">
+                <div class="claim-header">
+                    <div class="claim-icon">
+                        <i class="fa-solid fa-plus-circle"></i>
+                    </div>
+                    <div>
+                        <h3>تفعيل كرت جديد</h3>
+                        <p>أدخل رمز الكرت المكتوب على العلبة.</p>
+                    </div>
+                </div>
+                <div class="claim-form">
+                    <input
+                        type="text"
+                        id="cardIdInput"
+                        placeholder="مثال: X7K29P4M"
+                        autocomplete="off"
+                        spellcheck="false"
+                        dir="ltr">
+                    <button id="btnClaimCard" class="btn-claim">
+                        <i class="fa-solid fa-link"></i>
+                        <span>ربط الكرت</span>
+                    </button>
+                </div>
+            </section>
+
+            <!-- My Cards Section -->
+            <section class="my-cards-section">
+                <div class="section-header-dash">
+                    <h2>
+                        <i class="fa-solid fa-layer-group"></i>
+                        منتجاتك
+                    </h2>
+                </div>
+
+                <div class="cards-grid" id="myCardsList">
+                    <div class="dash-loading">
+                        <i class="fa-solid fa-spinner fa-spin"></i>
+                        <span>جاري التحميل...</span>
+                    </div>
+                </div>
+            </section>
+
+        </div>
+    </main>
+
+    <!-- =========================
+         Edit Modal
+    ========================== -->
+    <div class="modal-overlay" id="editModal">
+        <div class="modal-card modal-card-lg">
+
+            <div class="modal-header">
+                <h3 id="modalTitle">
+                    <i class="fa-solid fa-pen-to-square"></i>
+                    إدارة الكرت
+                </h3>
+                <button class="modal-close" id="btnCloseModal" aria-label="إغلاق">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <form id="editCardForm">
+                <input type="hidden" id="editCardId">
+
+                <!-- =========================
+                     Step 1: Type Selection
+                ========================== -->
+                <div id="stepTypeSelect" class="hidden">
+                    <h3 class="section-title">
+                        <i class="fa-solid fa-list"></i>
+                        اختر نوع الكرت
+                    </h3>
+                    <div class="type-selector" id="typeSelector"></div>
+                    <button type="button" id="btnConfirmType" class="btn-save" disabled>
+                        <i class="fa-solid fa-arrow-left"></i>
+                        متابعة
+                    </button>
+                </div>
+
+                <!-- =========================
+                     Step 2: Card Fields
+                ========================== -->
+                <div id="stepCardFields" class="hidden">
+
+                    <!-- Protection Section -->
+                    <div id="protectionSection" class="protection-box hidden">
+                        <h3 class="section-title">
+                            <i class="fa-solid fa-shield-halved"></i>
+                            حماية الكرت
+                        </h3>
+                        <div class="protection-hint">
+                            <i class="fa-solid fa-circle-info"></i>
+                            هذا الكرت محمي — يجب إدخال سؤال وإجابة سرية. سيُعرض السؤال للزائر عند فتح الكرت.
+                        </div>
+
+                        <div class="form-group">
+                            <label for="securityQuestionInput">
+                                <i class="fa-solid fa-question-circle"></i>
+                                السؤال السري <span class="required">*</span>
+                            </label>
+                            <input
+                                type="text"
+                                id="securityQuestionInput"
+                                placeholder="مثال: ما اسم أول حيوان أليف لك؟"
+                                maxlength="200">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="securityAnswerInput">
+                                <i class="fa-solid fa-key"></i>
+                                الإجابة السرية <span class="required">*</span>
+                            </label>
+                            <input
+                                type="text"
+                                id="securityAnswerInput"
+                                placeholder="أدخل الإجابة..."
+                                autocomplete="new-password">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="securityAnswerConfirm">
+                                <i class="fa-solid fa-rotate"></i>
+                                تأكيد الإجابة <span class="required">*</span>
+                            </label>
+                            <input
+                                type="text"
+                                id="securityAnswerConfirm"
+                                placeholder="أعد إدخال الإجابة..."
+                                autocomplete="new-password">
+                        </div>
+
+                        <div class="warning-box">
+                            <i class="fa-solid fa-triangle-exclamation"></i>
+                            <strong>مهم:</strong>
+                            احفظ السؤال والإجابة جيداً — لا يمكن استعادتهما إذا نسيتهما.
+                        </div>
+                    </div>
+
+                    <!-- =========================
+                         Type: Gift Card
+                    ========================== -->
+                    <div id="giftFields" class="hidden">
+                        <div class="form-group">
+                            <label for="giftTitle">
+                                <i class="fa-solid fa-heading"></i>
+                                عنوان الهدية
+                            </label>
+                            <input type="text" id="giftTitle" placeholder="مثال: إلى أغلى إنسانة ❤️">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="giftMessage">
+                                <i class="fa-solid fa-comment-dots"></i>
+                                الرسالة / الكلمة
+                            </label>
+                            <textarea id="giftMessage" rows="4" placeholder="اكتب رسالتك الخاصة هنا..."></textarea>
+                        </div>
+
+                        <h3 class="section-title">
+                            <i class="fa-solid fa-images"></i>
+                            الصور
+                        </h3>
+
+                        <div class="form-group">
+                            <label>
+                                <i class="fa-solid fa-image"></i>
+                                الصور المحفوظة (<span id="giftImagesCount">0</span>)
+                            </label>
+                            <div class="current-images-container" id="giftCurrentImages"></div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="giftImages">
+                                <i class="fa-solid fa-upload"></i>
+                                إضافة صور جديدة
+                            </label>
+                            <input type="file" id="giftImages" accept="image/*" multiple>
+                            <span class="file-status" id="giftImagesStatus"></span>
+                        </div>
+
+                        <h3 class="section-title">
+                            <i class="fa-solid fa-video"></i>
+                            الفيديو (اختياري)
+                        </h3>
+
+                        <div class="form-group">
+                            <label for="giftVideo">
+                                <i class="fa-solid fa-film"></i>
+                                فيديو الكرت
+                            </label>
+                            <input type="file" id="giftVideo" accept="video/*">
+                            <span class="file-status" id="giftVideoStatus"></span>
+                        </div>
+                    </div>
+
+                    <!-- =========================
+                         Type: Memory Book
+                    ========================== -->
+                    <div id="bookFields" class="hidden">
+                        <div class="form-group">
+                            <label for="bookTitle">
+                                <i class="fa-solid fa-book"></i>
+                                عنوان الكتاب
+                            </label>
+                            <input type="text" id="bookTitle" placeholder="مثال: قصة حبنا 💕">
+                        </div>
+
+                        <div class="hint">
+                            <i class="fa-solid fa-lightbulb"></i>
+                            أضف مناسبة لكل صفحة في كتاب الذكريات.
+                        </div>
+
+                        <div class="events-list" id="eventsList"></div>
+
+                        <button type="button" id="btnAddEvent" class="btn-add-event">
+                            <i class="fa-solid fa-plus"></i>
+                            إضافة صفحة جديدة
+                        </button>
+                    </div>
+
+                    <!-- =========================
+                         Type: Business Card
+                    ========================== -->
+                    <div id="businessFields" class="hidden">
+                        <div class="form-group">
+                            <label for="bizName">
+                                <i class="fa-solid fa-user"></i>
+                                الاسم الكامل
+                            </label>
+                            <input type="text" id="bizName" placeholder="مثال: أحمد محمد">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="bizJobTitle">
+                                <i class="fa-solid fa-briefcase"></i>
+                                المسمى الوظيفي
+                            </label>
+                            <input type="text" id="bizJobTitle" placeholder="مثال: مدير التسويق">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="bizCompany">
+                                <i class="fa-solid fa-building"></i>
+                                اسم المؤسسة / الشركة
+                            </label>
+                            <input type="text" id="bizCompany" placeholder="مثال: شركة تكس لاكشري">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="bizBio">
+                                <i class="fa-solid fa-align-right"></i>
+                                نبذة تعريفية
+                            </label>
+                            <textarea id="bizBio" rows="3" placeholder="اكتب نبذة قصيرة..."></textarea>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="bizServices">
+                                <i class="fa-solid fa-list-check"></i>
+                                الخدمات / ما تقدمه
+                            </label>
+                            <textarea id="bizServices" rows="3" placeholder="مثال: تصميم مواقع، تطبيقات..."></textarea>
+                        </div>
+
+                        <h3 class="section-title">
+                            <i class="fa-solid fa-address-book"></i>
+                            معلومات التواصل
+                        </h3>
+
+                        <div class="form-group">
+                            <label>
+                                <i class="fa-solid fa-phone"></i>
+                                أرقام الهاتف
+                            </label>
+                            <div id="phoneList" class="social-list"></div>
+                            <button type="button" id="btnAddPhone" class="btn-add-social">
+                                <i class="fa-solid fa-plus"></i>
+                                إضافة رقم هاتف
+                            </button>
+                        </div>
+
+                        <div class="form-group">
+                            <label>
+                                <i class="fa-solid fa-globe"></i>
+                                المواقع الإلكترونية
+                            </label>
+                            <div id="websiteList" class="social-list"></div>
+                            <button type="button" id="btnAddWebsite" class="btn-add-social">
+                                <i class="fa-solid fa-plus"></i>
+                                إضافة موقع
+                            </button>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="bizEmail">
+                                <i class="fa-solid fa-envelope"></i>
+                                البريد الإلكتروني
+                            </label>
+                            <input type="email" id="bizEmail" placeholder="email@example.com" dir="ltr">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="bizAddress">
+                                <i class="fa-solid fa-location-dot"></i>
+                                العنوان
+                            </label>
+                            <input type="text" id="bizAddress" placeholder="عمّان، الأردن">
+                        </div>
+
+                        <h3 class="section-title">
+                            <i class="fa-solid fa-share-nodes"></i>
+                            السوشيال ميديا
+                        </h3>
+
+                        <div class="form-group">
+                            <label>
+                                <i class="fa-brands fa-instagram"></i>
+                                حسابات إنستغرام
+                            </label>
+                            <div id="instagramList" class="social-list"></div>
+                            <button type="button" id="btnAddInstagram" class="btn-add-social">
+                                <i class="fa-solid fa-plus"></i>
+                                إضافة حساب
+                            </button>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="bizFacebook">
+                                <i class="fa-brands fa-facebook"></i>
+                                فيسبوك
+                            </label>
+                            <input type="text" id="bizFacebook" placeholder="facebook.com/page" dir="ltr">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="bizLinkedin">
+                                <i class="fa-brands fa-linkedin"></i>
+                                لينكد إن
+                            </label>
+                            <input type="text" id="bizLinkedin" placeholder="linkedin.com/in/..." dir="ltr">
+                        </div>
+
+                        <h3 class="section-title">
+                            <i class="fa-solid fa-image"></i>
+                            الشعار / الصورة الشخصية
+                        </h3>
+
+                        <div class="form-group">
+                            <label>
+                                <i class="fa-solid fa-image"></i>
+                                الصورة الحالية
+                            </label>
+                            <div class="current-images-container" id="bizLogoContainer"></div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="bizLogo">
+                                <i class="fa-solid fa-upload"></i>
+                                رفع شعار / صورة جديدة
+                            </label>
+                            <input type="file" id="bizLogo" accept="image/*">
+                            <span class="file-status" id="bizLogoStatus"></span>
+                        </div>
+                    </div>
+
+                    <!-- =========================
+                         Type: Pet Card
+                    ========================== -->
+                    <div id="petFields" class="hidden">
+                        <div class="hint">
+                            <i class="fa-solid fa-paw"></i>
+                            بطاقة الحيوانات <strong>عامة</strong> — يمكن لأي شخص يفتح الرابط رؤيتها بدون كلمة مرور.
+                        </div>
+
+                        <div class="form-group">
+                            <label for="petName">
+                                <i class="fa-solid fa-paw"></i>
+                                اسم الحيوان
+                            </label>
+                            <input type="text" id="petName" placeholder="مثال: ليو">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="petType">
+                                <i class="fa-solid fa-dog"></i>
+                                نوع الحيوان
+                            </label>
+                            <select id="petType">
+                                <option value="">— اختر —</option>
+                                <option value="قط">🐱 قط</option>
+                                <option value="كلب">🐶 كلب</option>
+                                <option value="طير">🐦 طير</option>
+                                <option value="أرنب">🐰 أرنب</option>
+                                <option value="سمكة">🐠 سمكة</option>
+                                <option value="سلحفاة">🐢 سلحفاة</option>
+                                <option value="هامستر">🐹 هامستر</option>
+                                <option value="آخر">🐾 آخر</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="petBreed">
+                                <i class="fa-solid fa-dna"></i>
+                                السلالة
+                            </label>
+                            <input type="text" id="petBreed" placeholder="مثال: شيرازي">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="petAge">
+                                <i class="fa-solid fa-cake-candles"></i>
+                                العمر
+                            </label>
+                            <input type="text" id="petAge" placeholder="مثال: 3 سنوات">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="petWeight">
+                                <i class="fa-solid fa-weight-scale"></i>
+                                الوزن
+                            </label>
+                            <input type="text" id="petWeight" placeholder="مثال: 4 كجم">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="petColor">
+                                <i class="fa-solid fa-palette"></i>
+                                اللون
+                            </label>
+                            <input type="text" id="petColor" placeholder="مثال: أبيض مع رمادي">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="petNotes">
+                                <i class="fa-solid fa-notes-medical"></i>
+                                ملاحظات (حساسية، أدوية، طعام خاص)
+                            </label>
+                            <textarea id="petNotes" rows="3" placeholder="مثال: حساسية من الدجاج..."></textarea>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="petVaccinations">
+                                <i class="fa-solid fa-syringe"></i>
+                                آخر تطعيم
+                            </label>
+                            <input type="date" id="petVaccinations">
+                        </div>
+
+                        <h3 class="section-title">
+                            <i class="fa-solid fa-user"></i>
+                            معلومات المالك
+                        </h3>
+
+                        <div class="form-group">
+                            <label for="petOwnerName">
+                                <i class="fa-solid fa-user"></i>
+                                اسم المالك
+                            </label>
+                            <input type="text" id="petOwnerName" placeholder="اسمك الكامل">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="petOwnerPhone">
+                                <i class="fa-solid fa-phone"></i>
+                                رقم الهاتف (للتواصل إذا ضاع الحيوان)
+                            </label>
+                            <input type="tel" id="petOwnerPhone" placeholder="+962 7XXXXXXXX" dir="ltr">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="petAddress">
+                                <i class="fa-solid fa-location-dot"></i>
+                                العنوان
+                            </label>
+                            <input type="text" id="petAddress" placeholder="عمّان، الأردن">
+                        </div>
+
+                        <h3 class="section-title">
+                            <i class="fa-solid fa-camera"></i>
+                            صورة الحيوان
+                        </h3>
+
+                        <div class="form-group">
+                            <label>
+                                <i class="fa-solid fa-image"></i>
+                                الصورة الحالية
+                            </label>
+                            <div class="current-images-container" id="petPhotoContainer"></div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="petPhoto">
+                                <i class="fa-solid fa-upload"></i>
+                                رفع صورة جديدة
+                            </label>
+                            <input type="file" id="petPhoto" accept="image/*">
+                            <span class="file-status" id="petPhotoStatus"></span>
+                        </div>
+                    </div>
+
+                    <!-- =========================
+                         Background Music (Shared)
+                    ========================== -->
+                    <h3 class="section-title">
+                        <i class="fa-solid fa-music"></i>
+                        موسيقى الخلفية
+                    </h3>
+
+                    <div class="music-box">
+                        <div class="form-group" style="margin-bottom:0;">
+                            <label for="editBgMusic">
+                                <i class="fa-solid fa-music"></i>
+                                الموسيقى التي ستعمل تلقائياً عند فتح الكرت
+                            </label>
+                            <input type="file" id="editBgMusic" accept="audio/*">
+                            <span class="file-status" id="bgMusicStatus"></span>
+                        </div>
+                    </div>
+
+                    <!-- Submit -->
+                    <button type="submit" class="btn-save" id="btnSaveData">
+                        <i class="fa-solid fa-floppy-disk"></i>
+                        حفظ الكرت
+                    </button>
+
+                </div>
+            </form>
+
+        </div>
+    </div>
+
+    <!-- =========================
+         Unlock Modal (Protected Cards)
+    ========================== -->
+    <div class="modal-overlay" id="unlockModal">
+        <div class="modal-card modal-card-sm">
+
+            <div class="modal-header">
+                <h3>
+                    <i class="fa-solid fa-shield-halved"></i>
+                    فتح الكرت المحمي
+                </h3>
+                <button class="modal-close" id="btnCloseUnlockModal" aria-label="إغلاق">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <p class="unlock-desc">
+                أجب على السؤال التالي لفتح الكرت وتعديل محتواه.
+            </p>
+
+            <div id="unlockQuestionDisplay" class="unlock-question-box">
+                <div class="unlock-question-label">
+                    <i class="fa-solid fa-question-circle"></i>
+                    السؤال:
+                </div>
+                <div id="unlockQuestionText" class="unlock-question-text">
+                    —
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="unlockAnswerInput">
+                    <i class="fa-solid fa-key"></i>
+                    الإجابة السرية
+                </label>
+                <input
+                    type="text"
+                    id="unlockAnswerInput"
+                    placeholder="أدخل الإجابة..."
+                    autocomplete="off">
+            </div>
+
+            <p class="error-msg" id="unlockError"></p>
+
+            <button type="button" class="btn-save" id="btnUnlockConfirm">
+                <i class="fa-solid fa-unlock"></i>
+                فتح الكرت
+            </button>
+
+        </div>
+    </div>
+
+    <script type="module" src="../js/customer-dashboard.js"></script>
+
+</body>
+</html>
