@@ -192,51 +192,66 @@ function toArray(value) {
 
 
 // ===== ✅ التحقق من الملفات قبل الرفع =====
+// ============================================================
+// ✅ التحقق من الملفات قبل الرفع (نسخة محسّنة لـ iPhone)
+// ============================================================
 function validateFile(file, type) {
     const limits = {
         image: {
-            maxSize: 15 * 1024 * 1024,           // 5 MB
-            types: ["image/jpeg", "image/jpg", "image/png", "image/webp"]
+            maxSize: 15 * 1024 * 1024,          // 15 MB
+            mainType: "image"
         },
         video: {
             maxSize: 100 * 1024 * 1024,         // 100 MB
-            types: ["video/mp4", "video/webm", "video/quicktime", "video/x-msvideo"]
+            mainType: "video"
         },
         audio: {
             maxSize: 10 * 1024 * 1024,          // 10 MB
-            types: ["audio/mpeg", "audio/mp3", "audio/wav", "audio/ogg", "audio/mp4"]
+            mainType: "audio"
         }
     };
 
     const config = limits[type];
     if (!config) throw new Error("نوع الملف غير معروف");
 
-    // تحقق من نوع الملف (MIME)
-    if (!config.types.includes(file.type)) {
-        throw new Error(`نوع الملف غير مدعوم: ${file.type}\nالمسموح: ${config.types.join(", ")}`);
+    // ✅ تحقق من النوع الأساسي (صورة، فيديو، صوت)
+    // هذا يقبل كل الأنواع الفرعية (audio/mpeg, audio/mp3, audio/x-mpeg, ...)
+    if (!file.type.startsWith(config.mainType + "/")) {
+        throw new Error(`نوع الملف غير مدعوم: ${file.type}\nالمسموح: ملفات ${type}`);
     }
 
-    // تحقق من الحجم
+    // ✅ تحقق من الحجم
     if (file.size > config.maxSize) {
         const maxMB = (config.maxSize / 1024 / 1024).toFixed(0);
         const curMB = (file.size / 1024 / 1024).toFixed(2);
         throw new Error(`الملف كبير جداً (${curMB} MB) — الحد ${maxMB} MB`);
     }
 
-    // تحقق من امتداد الملف (احتياطي)
-    const ext = file.name.split(".").pop().toLowerCase();
-    const allowedExts = {
-        image: ["jpg", "jpeg", "png", "webp"],
-        video: ["mp4", "webm", "mov", "avi"],
-        audio: ["mp3", "wav", "ogg", "m4a"]
-    };
-    if (!allowedExts[type].includes(ext)) {
-        throw new Error(`امتداد الملف غير مدعوم: .${ext}`);
+    // ✅ تحقق من الملف فارغ
+    if (file.size === 0) {
+        throw new Error("الملف فارغ أو تالف");
+    }
+
+    // ✅ فحص الامتداد (اختياري — يتجاهل إذا كان ناقصاً)
+    const fileName = file.name || "";
+    const parts = fileName.split(".");
+    const ext = parts.length > 1 ? parts.pop().toLowerCase() : "";
+
+    // إذا لا يوجد امتداد → نتجاهل الفحص (iPhone قد لا يرسله)
+    if (ext) {
+        const allowedExts = {
+            image: ["jpg", "jpeg", "png", "webp", "heic", "heif"],
+            video: ["mp4", "webm", "mov", "avi", "m4v"],
+            audio: ["mp3", "wav", "ogg", "m4a", "aac", "opus", "flac", "wma"]
+        };
+
+        if (!allowedExts[type].includes(ext)) {
+            throw new Error(`امتداد الملف غير مدعوم: .${ext}\nالمسموح: ${allowedExts[type].join(", ")}`);
+        }
     }
 
     return true;
 }
-
 
 // ===== ✅ دالة escapeHtml (لمنع XSS) =====
 function escapeHtml(text) {
