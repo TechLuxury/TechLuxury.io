@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="لوحة تحكم المطور | Tech Luxury - إدارة كروت NFC">
+    <title>لوحة المطور | إدارة كروت ذكرى</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎴</text></svg>">
+
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="../css/admin.css">
+</head>
+<body class="admin-page">
+
+    <!-- =========================
+         Top Navbar
+    ========================== -->
+    <header class="admin-navbar">
+        <div class="admin-nav-container">
+
+            <a href="../index.html" class="brand-logo">
+                <i class="fa-solid fa-gem"></i>
+                <span>Tech Luxury</span>
+            </a>
+
+            <div class="admin-badge-top">
+                <i class="fa-solid fa-code"></i>
+                <span>لوحة المطور</span>
+            </div>
+
+        </div>
+    </header>
+
+    <!-- =========================
+         Main Content
+    ========================== -->
+    <main class="admin-main">
+        <div class="container">
+
+            <!-- Page Header -->
+            <section class="admin-header-section">
+                <div class="admin-header-content">
+                    <h1>
+                        <i class="fa-solid fa-gauge-high"></i>
+                        لوحة تحكم المطور
+                    </h1>
+                    <p>إدارة كروت NFC، تفعيلها، وتتبع حالتها.</p>
+                </div>
+
+                <button id="btnCreateCard" class="btn-create">
+                    <i class="fa-solid fa-plus"></i>
+                    <span>إنشاء كرت NFC جديد</span>
+                </button>
+            </section>
+
+            <!-- Stats Grid -->
+            <section class="stats-grid">
+                <div class="stat-card stat-total">
+                    <div class="stat-icon">
+                        <i class="fa-solid fa-layer-group"></i>
+                    </div>
+                    <div class="stat-content">
+                        <h3>إجمالي الكروت</h3>
+                        <p id="totalCards">0</p>
+                    </div>
+                </div>
+
+                <div class="stat-card stat-available">
+                    <div class="stat-icon">
+                        <i class="fa-solid fa-inbox"></i>
+                    </div>
+                    <div class="stat-content">
+                        <h3>الكروت المتاحة</h3>
+                        <p id="availableCards">0</p>
+                    </div>
+                </div>
+
+                <div class="stat-card stat-active">
+                    <div class="stat-icon">
+                        <i class="fa-solid fa-circle-check"></i>
+                    </div>
+                    <div class="stat-content">
+                        <h3>الكروت المفعلة</h3>
+                        <p id="activeCards">0</p>
+                    </div>
+                </div>
+
+                <div class="stat-card stat-disabled">
+                    <div class="stat-icon">
+                        <i class="fa-solid fa-circle-xmark"></i>
+                    </div>
+                    <div class="stat-content">
+                        <h3>الكروت المعطلة</h3>
+                        <p id="disabledCards">0</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Search & Filter -->
+            <section class="search-section">
+                <h3 class="search-title">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                    البحث والتصفية
+                </h3>
+
+                <div class="search-bar">
+                    <div class="search-input-wrap">
+                        <i class="fa-solid fa-search search-input-icon"></i>
+                        <input
+                            type="text"
+                            id="searchInput"
+                            placeholder="ابحث برمز الكرت أو اسم العميل أو البريد الإلكتروني..."
+                            autocomplete="off"
+                            spellcheck="false">
+                    </div>
+
+                    <div class="filter-btns" role="tablist">
+                        <button class="filter-btn active" data-filter="all" role="tab">
+                            <i class="fa-solid fa-list"></i>
+                            الكل
+                        </button>
+                        <button class="filter-btn" data-filter="available" role="tab">
+                            <i class="fa-solid fa-inbox"></i>
+                            متاح
+                        </button>
+                        <button class="filter-btn" data-filter="active" role="tab">
+                            <i class="fa-solid fa-circle-check"></i>
+                            مفعل
+                        </button>
+                        <button class="filter-btn" data-filter="disabled" role="tab">
+                            <i class="fa-solid fa-circle-xmark"></i>
+                            معطل
+                        </button>
+                        <button class="filter-btn" data-filter="protected" role="tab">
+                            <i class="fa-solid fa-lock"></i>
+                            محمي
+                        </button>
+                        <button class="filter-btn" data-filter="public" role="tab">
+                            <i class="fa-solid fa-globe"></i>
+                            عام
+                        </button>
+                    </div>
+                </div>
+
+                <div class="search-results-info" id="searchInfo"></div>
+            </section>
+
+            <!-- Table -->
+            <section class="table-container">
+                <div class="table-wrap">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>رمز الكرت</th>
+                                <th>العميل</th>
+                                <th>النوع / الحالة</th>
+                                <th>الحالة (Status)</th>
+                                <th>تاريخ الإنشاء</th>
+                                <th>الإجراءات</th>
+                            </tr>
+                        </thead>
+                        <tbody id="cardsTableBody">
+                            <tr>
+                                <td colspan="6" class="empty-state">
+                                    <i class="fa-solid fa-spinner fa-spin"></i>
+                                    <span>جاري تحميل الكروت...</span>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+        </div>
+    </main>
+
+    <script type="module" src="../js/admin.js"></script>
+
+</body>
+</html>
