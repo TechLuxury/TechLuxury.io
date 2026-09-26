@@ -49,6 +49,22 @@ btnToggle.addEventListener("click", () => {
     }
 });
 
+// 🔐 تحديث رسالة القفل باستمرار
+const lockoutEl = document.getElementById("lockoutMessage");
+
+function updateLockoutMessage() {
+    if (!lockoutEl) return;
+    const status = isAccountLocked();
+    if (status.locked) {
+        lockoutEl.style.display = "block";
+        lockoutEl.textContent = `🔒 الحساب مقفل — حاول بعد ${status.remainingMinutes} دقيقة`;
+    } else {
+        lockoutEl.style.display = "none";
+    }
+}
+
+if (!isSignUp) updateLockoutMessage();
+
 // ===== معالجة نموذج التسجيل / الدخول =====
 // ============================================================
 // 🔐 Rate Limiting — منع تكرار المحاولات الفاشلة
