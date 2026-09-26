@@ -50,12 +50,87 @@ btnToggle.addEventListener("click", () => {
 });
 
 // ===== معالجة نموذج التسجيل / الدخول =====
+// ============================================================
+// 🔐 Rate Limiting — منع تكرار المحاولات الفاشلة
+// ============================================================
+const MAX_LOGIN_ATTEMPTS = 5;
+const LOCKOUT_DURATION_MS = 15 * 60 * 1000; // 15 دقيقة
+
+function getLoginAttemptsData() {
+    try {
+        const data = localStorage.getItem("loginAttempts");
+        return data ? JSON.parse(data) : { count: 0, lockedUntil: 0 };
+    } catch {
+        return { count: 0, lockedUntil: 0 };
+    }
+}
+
+function saveLoginAttemptsData(data) {
+    try {
+        localStorage.setItem("loginAttempts", JSON.stringify(data));
+    } catch (e) {
+        console.error("فشل حفظ محاولات الدخول:", e);
+    }
+}
+
+function isAccountLocked() {
+    const data = getLoginAttemptsData();
+    const now = Date.now();
+
+    if (data.lockedUntil && now < data.lockedUntil) {
+        const remainingMs = data.lockedUntil - now;
+        const remainingMin = Math.ceil(remainingMs / 60000);
+        return { locked: true, remainingMinutes: remainingMin };
+    }
+
+    // إذا انتهى وقت القفل → أعد تعيين العداد
+    if (data.lockedUntil && now >= data.lockedUntil) {
+        saveLoginAttemptsData({ count: 0, lockedUntil: 0 });
+    }
+
+    return { locked: false };
+}
+
+function registerFailedAttempt() {
+    const data = getLoginAttemptsData();
+    data.count += 1;
+
+    if (data.count >= MAX_LOGIN_ATTEMPTS) {
+        data.lockedUntil = Date.now() + LOCKOUT_DURATION_MS;
+        saveLoginAttemptsData(data);
+        return {
+            locked: true,
+            remainingMinutes: 15
+        };
+    }
+
+    saveLoginAttemptsData(data);
+    return {
+        locked: false,
+        remainingAttempts: MAX_LOGIN_ATTEMPTS - data.count
+    };
+}
+
+function resetLoginAttempts() {
+    saveLoginAttemptsData({ count: 0, lockedUntil: 0 });
+}
+
+// ===== معالجة نموذج التسجيل / الدخول =====
 document.getElementById("authForm").addEventListener("submit", async (e) => {
     e.preventDefault();
 
     const email = document.getElementById("email").value.trim();
     const password = document.getElementById("password").value;
     const fullName = document.getElementById("fullName").value.trim();
+
+    // 🔐 التحقق من القفل (فقط لتسجيل الدخول، ليس لإنشاء حساب)
+    if (!isSignUp) {
+        const lockStatus = isAccountLocked();
+        if (lockStatus.locked) {
+            alert(`🔒 تم قفل تسجيل الدخول مؤقتاً\n\nبسبب تكرار المحاولات الفاشلة.\n\nيرجى المحاولة بعد ${lockStatus.remainingMinutes} دقيقة.`);
+            return;
+        }
+    }
 
     try {
         if (isSignUp) {
@@ -77,15 +152,33 @@ document.getElementById("authForm").addEventListener("submit", async (e) => {
                 createdAt: serverTimestamp()
             });
 
+            // ✅ إعادة تعيين المحاولات بعد نجاح التسجيل
+            resetLoginAttempts();
+
             alert("✅ تم إنشاء الحساب بنجاح!");
             window.location.href = "customer-dashboard.html";
         } else {
             // 🔹 تسجيل الدخول
             await signInWithEmailAndPassword(auth, email, password);
+
+            // ✅ نجاح → أعد تعيين المحاولات
+            resetLoginAttempts();
+
             window.location.href = "customer-dashboard.html";
         }
     } catch (error) {
         console.error("خطأ في المصادقة:", error);
+
+        // 🔐 سجّل المحاولة الفاشلة (فقط لتسجيل الدخول)
+        let failureMessage = "";
+        if (!isSignUp) {
+            const attemptResult = registerFailedAttempt();
+            if (attemptResult.locked) {
+                failureMessage = `\n\n🔒 تم قفل تسجيل الدخول لمدة 15 دقيقة.`;
+            } else if (attemptResult.remainingAttempts <= 2) {
+                failureMessage = `\n\n⚠️ تبقى ${attemptResult.remainingAttempts} محاولة قبل القفل.`;
+            }
+        }
 
         // رسائل خطأ واضحة بالعربية
         let message = error.message;
@@ -95,8 +188,9 @@ document.getElementById("authForm").addEventListener("submit", async (e) => {
         else if (error.code === "auth/email-already-in-use") message = "هذا البريد مستخدم بالفعل";
         else if (error.code === "auth/weak-password") message = "كلمة المرور ضعيفة (6 أحرف على الأقل)";
         else if (error.code === "auth/invalid-credential") message = "البريد أو كلمة المرور غير صحيحة";
+        else if (error.code === "auth/too-many-requests") message = "طلبات كثيرة جداً — انتظر قليلاً";
 
-        alert("❌ " + message);
+        alert("❌ " + message + failureMessage);
     }
 });
 
