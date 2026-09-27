@@ -543,21 +543,23 @@
    ============================================================ */
 
 .gift-message-content {
-    position: absolute; /* جعل الرسالة طبقة عائمة */
+    position: absolute;
     top: 50%;
     left: 50%;
-    transform: translate(-50%, -50%) scale(0.9); /* التمركز في المنتصف مع تصغير مبدئي */
-    width: 95%;
-    max-width: 520px;
+    /* جعل الحركة تبدأ من داخل الظرف (أصغر قليلاً) */
+    transform: translate(-50%, -50%) scale(0.7); 
+    width: 85%; /* تصغير العرض مقارنة بالظرف */
+    max-width: 380px; /* الحد الأقصى للعرض ليكون أصغر من عرض الظرف (480px) */
     opacity: 0;
     pointer-events: none;
-    z-index: 100; /* لضمان ظهورها فوق الظرف */
+    z-index: 100;
     transition: opacity 0.8s ease, transform 0.8s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 .gift-message-content.visible {
     opacity: 1;
-    transform: translate(-50%, -50%) scale(1); /* تكبيرها للحجم الطبيعي عند الظهور */
+    /* تكبيرها للحجم الطبيعي عند الظهور */
+    transform: translate(-50%, -50%) scale(1); 
     pointer-events: auto;
 }
 
@@ -566,34 +568,17 @@
    ============================================================ */
 
 .gift-message-paper {
-
     position: relative;
-
     width: 100%;
-
     box-sizing: border-box;
-
-    padding: 35px 30px;
-
-    border-radius: 18px;
-
-    background:
-        linear-gradient(
-            135deg,
-            #fffdf8,
-            #fff7ed
-        );
-
+    padding: 25px 20px; /* تم تقليل الحشوة من 35px 30px */
+    border-radius: 15px; /* تم تقليل الانحناء قليلاً */
+    background: linear-gradient(135deg, #fffdf8, #fff7ed);
     border: 1px solid rgba(236,72,153,0.16);
-
-    box-shadow:
-        0 18px 50px rgba(0,0,0,0.16);
-
+    box-shadow: 0 18px 50px rgba(0,0,0,0.16);
     text-align: center;
-
     overflow: hidden;
 }
-
 
 /* تأثير خفيف داخل الورقة */
 
@@ -702,23 +687,14 @@
    ============================================================ */
 
 .gift-message-text {
-
     position: relative;
-
     margin: 0;
-
     color: #374151;
-
-    font-size: 18px;
-
-    line-height: 2;
-
+    font-size: 16px; /* تم تصغير الخط من 18px */
+    line-height: 1.8; /* تم تقليل تباعد الأسطر */
     white-space: pre-wrap;
-
     word-break: break-word;
-
     text-align: center;
-
     font-weight: 500;
 }
 
@@ -836,17 +812,20 @@
         font-size: 23px;
     }
 
-
+    .gift-message-content {
+        width: 88%;
+        max-width: 320px; /* حجم أصغر للهواتف */
+    }
     .gift-message-paper {
 
-        padding: 28px 20px;
+        padding: 20px 15px;
         border-radius: 15px;
     }
 
 
     .gift-message-text {
 
-        font-size: 16px;
+        font-size: 15px;
 
         line-height: 1.9;
     }
