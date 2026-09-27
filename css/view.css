@@ -1837,8 +1837,9 @@
     color: var(--text-primary);
     font-size: 0.92rem;
     line-height: 1.75;
-    white-space: pre-wrap;
-    word-break: break-word;
+    white-space: pre-wrap; /* يحترم الأسطر الجديدة */
+    word-break: break-word; /* يكسر الكلمات الطويلة */
+    overflow-wrap: anywhere; /* يمنع خروج النص */
 }
 
 .biz-contacts {
