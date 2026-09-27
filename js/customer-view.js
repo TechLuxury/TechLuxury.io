@@ -1036,13 +1036,13 @@ async function renderBusinessCard(card, typeInfo) {
 
     const socials = [];
     instagrams.forEach(acc => {
-        socials.push(`<a href="https://instagram.com/${cleanInstagram(acc)}" target="_blank" class="biz-social-btn instagram"><i class="fa-brands fa-instagram"></i></a>`);
+        socials.push(`<a href="${formatSocialUrl('instagram', acc)}" target="_blank" class="biz-social-btn instagram"><i class="fa-brands fa-instagram"></i></a>`);
     });
     facebook.forEach(fb => {
-        socials.push(`<a href="https://${String(fb).replace(/^https?:\/\//i, "")}" target="_blank" class="biz-social-btn facebook"><i class="fa-brands fa-facebook-f"></i></a>`);
+        socials.push(`<a href="${formatSocialUrl('facebook', fb)}" target="_blank" class="biz-social-btn facebook"><i class="fa-brands fa-facebook-f"></i></a>`);
     });
     linkedin.forEach(li => {
-        socials.push(`<a href="https://${String(li).replace(/^https?:\/\//i, "")}" target="_blank" class="biz-social-btn linkedin"><i class="fa-brands fa-linkedin-in"></i></a>`);
+        socials.push(`<a href="${formatSocialUrl('linkedin', li)}" target="_blank" class="biz-social-btn linkedin"><i class="fa-brands fa-linkedin-in"></i></a>`);
     });
     websites.forEach(site => {
         socials.push(`<a href="${cleanWebsite(site)}" target="_blank" class="biz-social-btn website"><i class="fa-solid fa-globe"></i></a>`);
@@ -1430,6 +1430,22 @@ function escapeHtml(text) {
     div.textContent = text;
     return div.innerHTML;
 }
+
+function formatSocialUrl(platform, value) {
+    let str = String(value).trim();
+    if (!str) return "";
+    if (/^https?:\/\//i.test(str)) return str;
+    str = str.replace(/^@/, "").replace(/^\/+/, "");
+    
+    if (platform === 'facebook') return `https://facebook.com/${str}`;
+    if (platform === 'instagram') return `https://instagram.com/${str}`;
+    if (platform === 'linkedin') {
+        if (str.includes('/')) return `https://linkedin.com/${str}`;
+        return `https://linkedin.com/in/${str}`;
+    }
+    return str;
+}
+
 
 // ===== بدء التشغيل =====
 init();
