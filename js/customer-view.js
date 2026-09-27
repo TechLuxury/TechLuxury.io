@@ -1041,7 +1041,6 @@ function formatServices(text) {
     }
     return formatted;
 }
-
 // دالة اختصار روابط الخرائط الطويلة
 function getAddressLabel(address) {
     if (!address) return "";
@@ -1493,20 +1492,7 @@ function escapeHtml(text) {
 
 
 // دالة لتنسيق نص الخدمات وجعله قائمة مقروءة
-function formatServices(text) {
-    if (!text) return "";
-    let formatted = escapeHtml(text);
-    // إذا كان النص مكتوباً كفقرة واحدة (بدون أسطر جديدة)
-    if (!formatted.includes('\n')) {
-        // نقوم بإضافة فاصل (سطر جديد) قبل كل إيموجي لتبدو كقائمة
-        formatted = formatted.replace(/([\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}])/gu, '<br>$1');
-        // إزالة الفاصل الأول إذا بدأ النص بإيموجي
-        if (formatted.startsWith('<br>')) {
-            formatted = formatted.substring(4);
-        }
-    }
-    return formatted;
-}
+
 
 // دالة لاختصار روابط الخرائط الطويلة
 function getAddressLabel(address) {
