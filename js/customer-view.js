@@ -269,136 +269,586 @@ async function loadEncryptedImage(imageData) {
 // ============================================================
 // 🎁 كرت الهدية
 // ============================================================
+// ============================================================
+// 🎁 كرت الهدية — ظرف يفتح عند الضغط
+// ============================================================
 async function renderGiftCard(card, typeInfo) {
+
+    // ========================================================
+    // 🖼️ تحميل الصور وفك تشفيرها
+    // ========================================================
     const imagesData = card.images || [];
     const decryptedImages = [];
+
     for (const img of imagesData) {
         const url = await loadEncryptedImage(img);
         if (url) decryptedImages.push(url);
     }
 
+    // ========================================================
+    // 💌 قراءة الرسالة
+    // ========================================================
     let messageText = "";
+
     if (card.message) {
+
         if (typeof card.message === "string") {
             messageText = card.message;
-        } else if (card.message.ciphertext && currentEncryptionKey) {
+
+        } else if (
+            card.message.ciphertext &&
+            currentEncryptionKey
+        ) {
             try {
-                messageText = await decryptText(card.message.ciphertext, card.message.iv, currentEncryptionKey);
+                messageText = await decryptText(
+                    card.message.ciphertext,
+                    card.message.iv,
+                    currentEncryptionKey
+                );
             } catch (e) {
-                messageText = "⚠️ تعذّر فك التشفير";
+                console.error("فشل فك تشفير الرسالة:", e);
+                messageText = "⚠️ تعذّر فك تشفير الرسالة";
             }
         }
     }
 
+    // ========================================================
     // 🎬 فك تشفير الفيديو
+    // ========================================================
     let videoUrl = null;
 
     if (card.videoUrl && typeof card.videoUrl === "string") {
+
         videoUrl = card.videoUrl;
-    }
-    else if (card.video && typeof card.video === "object" && card.video.encrypted && card.video.url) {
+
+    } else if (
+        card.video &&
+        typeof card.video === "object" &&
+        card.video.encrypted &&
+        card.video.url
+    ) {
+
         if (currentEncryptionKey) {
+
             try {
+
                 console.log("🎬 تحميل فيديو مشفر...");
+
                 const res = await fetch(card.video.url);
-                if (!res.ok) throw new Error("فشل تحميل الفيديو: " + res.status);
+
+                if (!res.ok) {
+                    throw new Error(
+                        "فشل تحميل الفيديو: " + res.status
+                    );
+                }
 
                 const encryptedBlob = await res.blob();
-                console.log("📦 حجم الملف المشفر:", encryptedBlob.size, "بايت");
 
                 const iv = base64UrlToBytes(card.video.iv);
-                const decryptedBlob = await decryptFile(encryptedBlob, iv, currentEncryptionKey);
+
+                const decryptedBlob = await decryptFile(
+                    encryptedBlob,
+                    iv,
+                    currentEncryptionKey
+                );
+
                 videoUrl = URL.createObjectURL(decryptedBlob);
-                console.log("✅ تم فك تشفير الفيديو:", decryptedBlob.size, "بايت");
+
+                console.log(
+                    "✅ تم فك تشفير الفيديو:",
+                    decryptedBlob.size,
+                    "بايت"
+                );
+
             } catch (e) {
-                console.error("❌ فشل فك تشفير الفيديو:", e);
+
+                console.error(
+                    "❌ فشل فك تشفير الفيديو:",
+                    e
+                );
             }
         }
-    }
-    else if (card.video && typeof card.video === "string") {
+
+    } else if (
+        card.video &&
+        typeof card.video === "string"
+    ) {
+
         videoUrl = card.video;
     }
 
-    // ✨ بناء واجهة الألبوم (يدعم المصغرات عند الصور الكثيرة)
+
+    // ========================================================
+    // 🖼️ بناء ألبوم الصور
+    // ========================================================
     const totalImages = decryptedImages.length;
     const useThumbnails = totalImages > 4;
 
     const albumHtml = totalImages > 0 ? `
-        <h3 class="section-title"><i class="fa-solid fa-images"></i> ألبوم الصور (${totalImages})</h3>
+
+        <h3 class="section-title">
+            <i class="fa-solid fa-images"></i>
+            ألبوم الصور (${totalImages})
+        </h3>
+
         <div class="album-container" id="albumContainer">
+
             <div class="album-viewport" id="albumViewport">
+
                 <div class="album-top-bar">
+
                     <div class="album-counter" id="albumCounter">
                         <i class="fa-solid fa-image"></i>
                         <span>1 / ${totalImages}</span>
                     </div>
-                    ${totalImages > 1 ? `
-                        <button type="button" class="album-expand-btn" id="albumExpandBtn" aria-label="عرض كامل">
-                            <i class="fa-solid fa-expand"></i>
-                        </button>
-                    ` : ""}
-                </div>
-                ${decryptedImages.map((url, i) => `
-                    <div class="album-slide ${i === 0 ? "active" : ""}" data-slide="${i}">
-                        <img src="${url}" alt="صورة ${i + 1}" loading="${i === 0 ? "eager" : "lazy"}" draggable="false">
-                    </div>
-                `).join("")}
-                ${totalImages > 1 ? `
-                    <button class="album-nav-btn prev" id="albumPrev" aria-label="السابق"><i class="fa-solid fa-chevron-right"></i></button>
-                    <button class="album-nav-btn next" id="albumNext" aria-label="التالي"><i class="fa-solid fa-chevron-left"></i></button>
-                ` : ""}
-            </div>
-            ${totalImages > 1 ? (
-                useThumbnails ? `
-                    <div class="album-thumbs" id="albumThumbs">
-                        ${decryptedImages.map((url, i) => `
-                            <button type="button" class="album-thumb ${i === 0 ? "active" : ""}" data-thumb="${i}" aria-label="صورة ${i + 1}">
-                                <img src="${url}" alt="" loading="lazy">
+
+                    ${
+                        totalImages > 1
+                        ? `
+                            <button
+                                type="button"
+                                class="album-expand-btn"
+                                id="albumExpandBtn"
+                                aria-label="عرض كامل"
+                            >
+                                <i class="fa-solid fa-expand"></i>
                             </button>
-                        `).join("")}
+                        `
+                        : ""
+                    }
+
+                </div>
+
+                ${decryptedImages.map((url, i) => `
+
+                    <div
+                        class="album-slide ${i === 0 ? "active" : ""}"
+                        data-slide="${i}"
+                    >
+                        <img
+                            src="${url}"
+                            alt="صورة ${i + 1}"
+                            loading="${i === 0 ? "eager" : "lazy"}"
+                            draggable="false"
+                        >
                     </div>
-                    <div class="album-progress">
-                        <div class="album-progress-track">
-                            <div class="album-progress-fill" id="albumProgressFill" style="width: ${100 / totalImages}%"></div>
+
+                `).join("")}
+
+
+                ${
+                    totalImages > 1
+                    ? `
+
+                        <button
+                            class="album-nav-btn prev"
+                            id="albumPrev"
+                            aria-label="السابق"
+                        >
+                            <i class="fa-solid fa-chevron-right"></i>
+                        </button>
+
+                        <button
+                            class="album-nav-btn next"
+                            id="albumNext"
+                            aria-label="التالي"
+                        >
+                            <i class="fa-solid fa-chevron-left"></i>
+                        </button>
+
+                    `
+                    : ""
+                }
+
+            </div>
+
+
+            ${
+                totalImages > 1
+                ? (
+
+                    useThumbnails
+
+                    ? `
+
+                        <div
+                            class="album-thumbs"
+                            id="albumThumbs"
+                        >
+
+                            ${decryptedImages.map((url, i) => `
+
+                                <button
+                                    type="button"
+                                    class="album-thumb ${i === 0 ? "active" : ""}"
+                                    data-thumb="${i}"
+                                    aria-label="صورة ${i + 1}"
+                                >
+
+                                    <img
+                                        src="${url}"
+                                        alt=""
+                                        loading="lazy"
+                                    >
+
+                                </button>
+
+                            `).join("")}
+
                         </div>
-                        <div class="album-progress-label" id="albumProgressLabel">1 / ${totalImages}</div>
-                    </div>
-                ` : `
-                    <div class="album-dots" id="albumDots">
-                        ${decryptedImages.map((_, i) => `<button class="album-dot ${i === 0 ? "active" : ""}" data-dot="${i}"></button>`).join("")}
-                    </div>
-                `
-            ) : ""}
+
+
+                        <div class="album-progress">
+
+                            <div class="album-progress-track">
+
+                                <div
+                                    class="album-progress-fill"
+                                    id="albumProgressFill"
+                                    style="width: ${100 / totalImages}%"
+                                ></div>
+
+                            </div>
+
+                            <div
+                                class="album-progress-label"
+                                id="albumProgressLabel"
+                            >
+                                1 / ${totalImages}
+                            </div>
+
+                        </div>
+
+                    `
+
+                    : `
+
+                        <div
+                            class="album-dots"
+                            id="albumDots"
+                        >
+
+                            ${decryptedImages.map((_, i) => `
+
+                                <button
+                                    class="album-dot ${i === 0 ? "active" : ""}"
+                                    data-dot="${i}"
+                                ></button>
+
+                            `).join("")}
+
+                        </div>
+
+                    `
+                )
+                : ""
+            }
+
         </div>
+
     ` : "";
 
+
+    // ========================================================
+    // 💌 الظرف
+    // ========================================================
+    const messageEnvelopeHtml = messageText
+        ? `
+
+        <section
+            class="gift-message-section"
+            aria-label="رسالة الهدية"
+        >
+
+            <div
+                class="gift-envelope-wrapper"
+                id="giftEnvelopeWrapper"
+            >
+
+                <!-- الظرف -->
+                <button
+                    type="button"
+                    class="gift-envelope"
+                    id="giftEnvelope"
+                    aria-label="فتح الرسالة"
+                >
+
+                    <!-- الورقة داخل الظرف -->
+                    <div class="gift-letter">
+
+                        <div class="gift-letter-content">
+
+                            <div class="gift-letter-icon">
+                                💌
+                            </div>
+
+                            <div class="gift-letter-title">
+                                رسالة خاصة لك
+                            </div>
+
+                            <div class="gift-letter-hint">
+                                ستظهر الرسالة هنا
+                            </div>
+
+                        </div>
+
+                    </div>
+
+
+                    <!-- جسم الظرف -->
+                    <div class="envelope-body">
+
+                        <div class="envelope-heart">
+                            ♥
+                        </div>
+
+                    </div>
+
+
+                    <!-- غطاء الظرف -->
+                    <div class="envelope-flap"></div>
+
+
+                    <!-- زر الفتح -->
+                    <div class="envelope-open-text">
+
+                        <i class="fa-solid fa-hand-pointer"></i>
+
+                        <span>
+                            اضغط لفتح الرسالة
+                        </span>
+
+                    </div>
+
+                </button>
+
+
+                <!-- النص الذي يظهر بعد الفتح -->
+                <div
+                    class="gift-message-content"
+                    id="giftMessageContent"
+                    aria-hidden="true"
+                >
+
+                    <div class="gift-message-paper">
+
+                        <div class="gift-message-decoration top">
+                            ✦
+                        </div>
+
+                        <div class="gift-message-icon">
+                            💌
+                        </div>
+
+                        <div class="gift-message-label">
+                            رسالة خاصة لك
+                        </div>
+
+                        <div class="gift-message-divider"></div>
+
+                        <p class="gift-message-text">
+                            ${escapeHtml(messageText)}
+                        </p>
+
+                        <div class="gift-message-decoration bottom">
+                            ✦
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </section>
+
+    `
+        : "";
+
+
+    // ========================================================
+    // 🖥️ بناء واجهة الكرت
+    // ========================================================
     viewContainer.innerHTML = `
+
         <header class="gift-header">
-            <div class="gift-icon" style="color: ${typeInfo.color};">
+
+            <div
+                class="gift-icon"
+                style="color: ${typeInfo.color};"
+            >
                 <i class="fa-solid ${typeInfo.icon}"></i>
             </div>
-            <h1>${escapeHtml(card.title) || "🎁 هدية خاصة 🎁"}</h1>
+
+            <h1>
+                ${escapeHtml(card.title) || "🎁 هدية خاصة 🎁"}
+            </h1>
+
             <div class="gift-label">
-                <i class="fa-solid ${typeInfo.icon}"></i> ${typeInfo.label}
+
+                <i class="fa-solid ${typeInfo.icon}"></i>
+
+                ${typeInfo.label}
+
             </div>
+
         </header>
 
-        ${messageText ? `<div class="message-box"><p>${escapeHtml(messageText)}</p></div>` : ""}
 
+        <!-- 💌 الرسالة -->
+        ${messageEnvelopeHtml}
+
+
+        <!-- 🖼️ الصور -->
         ${albumHtml}
 
-        ${videoUrl ? `
-            <h3 class="section-title"><i class="fa-solid fa-video"></i> الفيديو</h3>
-            <div class="video-wrapper">
-                <video controls playsinline preload="metadata"><source src="${videoUrl}" type="video/mp4"></video>
-            </div>
-        ` : ""}
+
+        <!-- 🎬 الفيديو -->
+        ${
+            videoUrl
+            ? `
+
+                <h3 class="section-title">
+
+                    <i class="fa-solid fa-video"></i>
+
+                    الفيديو
+
+                </h3>
+
+                <div class="video-wrapper">
+
+                    <video
+                        controls
+                        playsinline
+                        preload="metadata"
+                    >
+
+                        <source
+                            src="${videoUrl}"
+                            type="video/mp4"
+                        >
+
+                    </video>
+
+                </div>
+
+            `
+            : ""
+        }
+
     `;
 
+
+    // ========================================================
+    // 🖼️ تشغيل الألبوم
+    // ========================================================
     currentImages = decryptedImages;
+
     setupAlbum();
+
+
+    // ========================================================
+    // 💌 تشغيل أنيميشن الظرف
+    // ========================================================
+    setupGiftEnvelope();
 }
 
+
+// ============================================================
+// 💌 تشغيل ظرف الرسالة
+// ============================================================
+function setupGiftEnvelope() {
+
+    const envelope = document.getElementById("giftEnvelope");
+
+    const wrapper = document.getElementById(
+        "giftEnvelopeWrapper"
+    );
+
+    const messageContent = document.getElementById(
+        "giftMessageContent"
+    );
+
+    if (!envelope || !wrapper || !messageContent) {
+        return;
+    }
+
+
+    let opened = false;
+
+
+    const openEnvelope = () => {
+
+        if (opened) return;
+
+        opened = true;
+
+
+        // منع الضغط المتكرر
+        envelope.disabled = true;
+
+
+        // فتح الظرف
+        wrapper.classList.add("opened");
+
+
+        // بعد فتح الغطاء وخروج الورقة
+        setTimeout(() => {
+
+            messageContent.classList.add(
+                "visible"
+            );
+
+            messageContent.setAttribute(
+                "aria-hidden",
+                "false"
+            );
+
+        }, 700);
+
+
+        // تمرير بسيط للرسالة على الهاتف
+        setTimeout(() => {
+
+            if (messageContent) {
+
+                messageContent.scrollIntoView({
+                    behavior: "smooth",
+                    block: "center"
+                });
+
+            }
+
+        }, 1100);
+    };
+
+
+    // الضغط بالماوس أو اللمس
+    envelope.addEventListener(
+        "click",
+        openEnvelope
+    );
+
+
+    // دعم Enter و Space
+    envelope.addEventListener(
+        "keydown",
+        (e) => {
+
+            if (
+                e.key === "Enter" ||
+                e.key === " "
+            ) {
+
+                e.preventDefault();
+
+                openEnvelope();
+            }
+
+        }
+    );
+}
 // ============================================================
 // 📖 كتاب الذكريات
 // ============================================================
