@@ -1042,15 +1042,7 @@ function formatServices(text) {
     return formatted;
 }
 // دالة اختصار روابط الخرائط الطويلة
-function getAddressLabel(address) {
-    if (!address) return "";
-    let str = String(address).trim();
-    // إذا كان النص عبارة عن رابط خرائط جوجل، نعرض نصاً بديلاً
-    if (str.includes("maps.app.goo.gl") || str.includes("google.com/maps") || str.startsWith("http")) {
-        return "📍 عرض الموقع على الخريطة";
-    }
-    return escapeHtml(str);
-}
+
 
 // ============================================================
 // 💼 دالة عرض بطاقة العمل (المعدلة)
