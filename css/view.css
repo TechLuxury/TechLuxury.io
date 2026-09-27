@@ -117,6 +117,810 @@
     to { opacity: 1; transform: translateY(0); }
 }
 
+/* ============================================================
+   💌 ظرف رسالة كرت الهدية
+   ============================================================ */
+
+.gift-message-section {
+    width: 100%;
+    max-width: 760px;
+    margin: 30px auto 45px;
+    padding: 0 15px;
+    box-sizing: border-box;
+}
+
+
+/* ============================================================
+   Wrapper
+   ============================================================ */
+
+.gift-envelope-wrapper {
+    position: relative;
+    width: 100%;
+    max-width: 560px;
+    min-height: 420px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+}
+
+
+/* ============================================================
+   💌 الظرف
+   ============================================================ */
+
+.gift-envelope {
+    position: relative;
+
+    width: min(92vw, 480px);
+    height: 300px;
+
+    margin: 30px auto 0;
+
+    padding: 0;
+
+    border: 0;
+    outline: none;
+
+    background: transparent;
+
+    cursor: pointer;
+
+    perspective: 1000px;
+
+    transition:
+        transform 0.3s ease,
+        filter 0.3s ease;
+}
+
+
+/* Hover للكمبيوتر */
+
+@media (hover: hover) {
+
+    .gift-envelope:hover {
+        transform: translateY(-5px);
+        filter: brightness(1.05);
+    }
+
+}
+
+
+/* ============================================================
+   جسم الظرف
+   ============================================================ */
+
+.envelope-body {
+    position: absolute;
+
+    left: 0;
+    right: 0;
+    bottom: 0;
+
+    width: 100%;
+    height: 210px;
+
+    background:
+        linear-gradient(
+            145deg,
+            #fbcfe8 0%,
+            #f9a8d4 50%,
+            #f472b6 100%
+        );
+
+    border-radius: 10px;
+
+    box-shadow:
+        0 20px 45px rgba(0, 0, 0, 0.22),
+        inset 0 1px 0 rgba(255,255,255,0.6);
+
+    overflow: hidden;
+
+    z-index: 3;
+}
+
+
+/* ============================================================
+   مثلثات الظرف
+   ============================================================ */
+
+.envelope-body::before {
+
+    content: "";
+
+    position: absolute;
+
+    left: 0;
+    bottom: 0;
+
+    width: 0;
+    height: 0;
+
+    border-top: 105px solid transparent;
+    border-bottom: 105px solid transparent;
+    border-left: 245px solid rgba(255,255,255,0.25);
+
+    z-index: 2;
+}
+
+
+.envelope-body::after {
+
+    content: "";
+
+    position: absolute;
+
+    right: 0;
+    bottom: 0;
+
+    width: 0;
+    height: 0;
+
+    border-top: 105px solid transparent;
+    border-bottom: 105px solid transparent;
+    border-right: 245px solid rgba(255,255,255,0.25);
+
+    z-index: 2;
+}
+
+
+/* ============================================================
+   ❤️ القلب
+   ============================================================ */
+
+.envelope-heart {
+
+    position: absolute;
+
+    left: 50%;
+    top: 50%;
+
+    transform:
+        translate(-50%, -50%);
+
+    z-index: 8;
+
+    width: 58px;
+    height: 58px;
+
+    border-radius: 50%;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    background: rgba(255,255,255,0.92);
+
+    color: #ec4899;
+
+    font-size: 28px;
+
+    box-shadow:
+        0 8px 20px rgba(0,0,0,0.15);
+
+    transition:
+        opacity 0.3s ease,
+        transform 0.5s ease;
+}
+
+
+/* ============================================================
+   🔺 غطاء الظرف
+   ============================================================ */
+
+.envelope-flap {
+
+    position: absolute;
+
+    top: 30px;
+    left: 0;
+
+    width: 0;
+    height: 0;
+
+    border-left: min(46vw, 240px) solid transparent;
+    border-right: min(46vw, 240px) solid transparent;
+
+    border-top: 135px solid #f9a8d4;
+
+    transform-origin: top center;
+
+    z-index: 6;
+
+    filter:
+        drop-shadow(
+            0 5px 4px rgba(0,0,0,0.12)
+        );
+
+    transition:
+        transform 0.9s cubic-bezier(.2,.8,.2,1);
+}
+
+
+/* ============================================================
+   📜 الورقة داخل الظرف
+   ============================================================ */
+
+.gift-letter {
+
+    position: absolute;
+
+    left: 8%;
+    width: 84%;
+
+    bottom: 35px;
+
+    height: 210px;
+
+    background:
+        linear-gradient(
+            135deg,
+            #fffdf7,
+            #fff7ed
+        );
+
+    border-radius: 8px;
+
+    box-shadow:
+        0 8px 25px rgba(0,0,0,0.16);
+
+    z-index: 2;
+
+    transform:
+        translateY(130px);
+
+    opacity: 0;
+
+    transition:
+        transform 0.9s cubic-bezier(.2,.8,.2,1),
+        opacity 0.5s ease;
+
+    overflow: hidden;
+}
+
+
+/* محتوى الورقة */
+
+.gift-letter-content {
+
+    height: 100%;
+
+    display: flex;
+
+    flex-direction: column;
+
+    align-items: center;
+    justify-content: center;
+
+    text-align: center;
+
+    padding: 20px;
+
+    box-sizing: border-box;
+}
+
+
+.gift-letter-icon {
+
+    font-size: 38px;
+
+    margin-bottom: 10px;
+}
+
+
+.gift-letter-title {
+
+    font-size: 20px;
+
+    font-weight: 700;
+
+    color: #be185d;
+}
+
+
+.gift-letter-hint {
+
+    margin-top: 7px;
+
+    font-size: 13px;
+
+    color: #9f1239;
+}
+
+
+/* ============================================================
+   👆 نص الضغط
+   ============================================================ */
+
+.envelope-open-text {
+
+    position: absolute;
+
+    left: 50%;
+    bottom: -40px;
+
+    transform:
+        translateX(-50%);
+
+    width: max-content;
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 7px;
+
+    color: #ec4899;
+
+    font-size: 14px;
+
+    font-weight: 600;
+
+    white-space: nowrap;
+
+    z-index: 20;
+
+    animation:
+        envelopeHint 1.8s ease-in-out infinite;
+}
+
+
+@keyframes envelopeHint {
+
+    0%,
+    100% {
+        opacity: 0.65;
+        transform:
+            translateX(-50%)
+            translateY(0);
+    }
+
+    50% {
+        opacity: 1;
+        transform:
+            translateX(-50%)
+            translateY(-4px);
+    }
+}
+
+
+/* ============================================================
+   💌 حالة الفتح
+   ============================================================ */
+
+.gift-envelope-wrapper.opened
+.gift-letter {
+
+    transform:
+        translateY(-105px);
+
+    opacity: 1;
+
+    z-index: 7;
+}
+
+
+.gift-envelope-wrapper.opened
+.envelope-flap {
+
+    transform:
+        rotateX(180deg);
+
+    z-index: 1;
+}
+
+
+.gift-envelope-wrapper.opened
+.envelope-heart {
+
+    opacity: 0;
+
+    transform:
+        translate(-50%, -50%)
+        scale(0.5);
+}
+
+
+.gift-envelope-wrapper.opened
+.envelope-open-text {
+
+    opacity: 0;
+
+    pointer-events: none;
+
+    animation: none;
+}
+
+
+/* ============================================================
+   📜 الرسالة بعد فتح الظرف
+   ============================================================ */
+
+.gift-message-content {
+
+    width: 100%;
+
+    margin-top: 10px;
+
+    opacity: 0;
+
+    transform:
+        translateY(30px)
+        scale(0.96);
+
+    max-height: 0;
+
+    overflow: hidden;
+
+    pointer-events: none;
+
+    transition:
+        opacity 0.8s ease,
+        transform 0.8s ease,
+        max-height 1s ease;
+}
+
+
+.gift-message-content.visible {
+
+    opacity: 1;
+
+    transform:
+        translateY(0)
+        scale(1);
+
+    max-height: 2000px;
+
+    pointer-events: auto;
+}
+
+
+/* ============================================================
+   📝 ورقة الرسالة
+   ============================================================ */
+
+.gift-message-paper {
+
+    position: relative;
+
+    width: 100%;
+
+    box-sizing: border-box;
+
+    padding: 35px 30px;
+
+    border-radius: 18px;
+
+    background:
+        linear-gradient(
+            135deg,
+            #fffdf8,
+            #fff7ed
+        );
+
+    border: 1px solid rgba(236,72,153,0.16);
+
+    box-shadow:
+        0 18px 50px rgba(0,0,0,0.16);
+
+    text-align: center;
+
+    overflow: hidden;
+}
+
+
+/* تأثير خفيف داخل الورقة */
+
+.gift-message-paper::before {
+
+    content: "";
+
+    position: absolute;
+
+    inset: 0;
+
+    background:
+        radial-gradient(
+            circle at 20% 20%,
+            rgba(236,72,153,0.08),
+            transparent 30%
+        ),
+        radial-gradient(
+            circle at 80% 80%,
+            rgba(245,158,11,0.08),
+            transparent 30%
+        );
+
+    pointer-events: none;
+}
+
+
+/* ============================================================
+   💌 أيقونة الرسالة
+   ============================================================ */
+
+.gift-message-icon {
+
+    position: relative;
+
+    font-size: 40px;
+
+    margin-bottom: 8px;
+
+    animation:
+        messageIconAppear 0.8s ease;
+}
+
+
+@keyframes messageIconAppear {
+
+    from {
+        opacity: 0;
+        transform: scale(0.5) rotate(-10deg);
+    }
+
+    to {
+        opacity: 1;
+        transform: scale(1) rotate(0);
+    }
+
+}
+
+
+/* ============================================================
+   عنوان الرسالة
+   ============================================================ */
+
+.gift-message-label {
+
+    position: relative;
+
+    color: #be185d;
+
+    font-size: 14px;
+
+    font-weight: 700;
+
+    letter-spacing: 0.3px;
+
+    margin-bottom: 15px;
+}
+
+
+/* ============================================================
+   خط فاصل
+   ============================================================ */
+
+.gift-message-divider {
+
+    position: relative;
+
+    width: 70px;
+
+    height: 2px;
+
+    margin: 0 auto 22px;
+
+    background:
+        linear-gradient(
+            90deg,
+            transparent,
+            #ec4899,
+            transparent
+        );
+}
+
+
+/* ============================================================
+   💬 نص الرسالة
+   ============================================================ */
+
+.gift-message-text {
+
+    position: relative;
+
+    margin: 0;
+
+    color: #374151;
+
+    font-size: 18px;
+
+    line-height: 2;
+
+    white-space: pre-wrap;
+
+    word-break: break-word;
+
+    text-align: center;
+
+    font-weight: 500;
+}
+
+
+/* ============================================================
+   ✦ الزخارف
+   ============================================================ */
+
+.gift-message-decoration {
+
+    position: relative;
+
+    color: #ec4899;
+
+    font-size: 18px;
+
+    opacity: 0.65;
+}
+
+
+.gift-message-decoration.top {
+    margin-bottom: 12px;
+}
+
+
+.gift-message-decoration.bottom {
+    margin-top: 22px;
+}
+
+
+/* ============================================================
+   📱 الهاتف
+   ============================================================ */
+
+@media (max-width: 600px) {
+
+    .gift-message-section {
+        margin-top: 20px;
+        padding: 0 10px;
+    }
+
+
+    .gift-envelope-wrapper {
+        min-height: 360px;
+    }
+
+
+    .gift-envelope {
+
+        width: min(92vw, 400px);
+
+        height: 250px;
+    }
+
+
+    .envelope-body {
+
+        height: 175px;
+
+        border-radius: 8px;
+    }
+
+
+    .envelope-body::before {
+
+        border-top-width: 87px;
+        border-bottom-width: 87px;
+
+        border-left-width: min(46vw, 200px);
+    }
+
+
+    .envelope-body::after {
+
+        border-top-width: 87px;
+        border-bottom-width: 87px;
+
+        border-right-width: min(46vw, 200px);
+    }
+
+
+    .envelope-flap {
+
+        top: 25px;
+
+        border-left-width: min(46vw, 200px);
+        border-right-width: min(46vw, 200px);
+
+        border-top-width: 110px;
+    }
+
+
+    .gift-letter {
+
+        height: 175px;
+
+        bottom: 30px;
+    }
+
+
+    .gift-envelope-wrapper.opened
+    .gift-letter {
+
+        transform:
+            translateY(-90px);
+    }
+
+
+    .envelope-heart {
+
+        width: 48px;
+        height: 48px;
+
+        font-size: 23px;
+    }
+
+
+    .gift-message-paper {
+
+        padding: 28px 20px;
+        border-radius: 15px;
+    }
+
+
+    .gift-message-text {
+
+        font-size: 16px;
+
+        line-height: 1.9;
+    }
+
+
+    .gift-message-icon {
+
+        font-size: 34px;
+    }
+
+
+    .gift-message-label {
+
+        font-size: 13px;
+    }
+
+}
+
+
+/* ============================================================
+   📱 شاشات صغيرة جدًا
+   ============================================================ */
+
+@media (max-width: 380px) {
+
+    .gift-envelope {
+
+        width: 94vw;
+        height: 225px;
+    }
+
+
+    .envelope-body {
+
+        height: 160px;
+    }
+
+
+    .envelope-flap {
+
+        border-left-width: 47vw;
+        border-right-width: 47vw;
+    }
+
+
+    .gift-letter {
+
+        height: 155px;
+    }
+
+
+    .gift-message-text {
+
+        font-size: 15px;
+        line-height: 1.8;
+    }
+
+}
+
 /* ===============================
    Error Screen
 =============================== */
