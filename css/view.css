@@ -1727,7 +1727,7 @@
 
 .biz-logo {
     width: 100%;
-    height: clamp(200px, 55vw, 280px);
+    height: clamp(150px, 40vw, 220px); /* تم تصغير الارتفاع قليلاً */
     border-radius: var(--radius-lg);
     object-fit: cover;
     border: 3px solid var(--view-accent);
