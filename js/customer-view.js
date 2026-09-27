@@ -1490,20 +1490,7 @@ function escapeHtml(text) {
     return div.innerHTML;
 }
 
-function formatSocialUrl(platform, value) {
-    let str = String(value).trim();
-    if (!str) return "";
-    if (/^https?:\/\//i.test(str)) return str;
-    str = str.replace(/^@/, "").replace(/^\/+/, "");
-    
-    if (platform === 'facebook') return `https://facebook.com/${str}`;
-    if (platform === 'instagram') return `https://instagram.com/${str}`;
-    if (platform === 'linkedin') {
-        if (str.includes('/')) return `https://linkedin.com/${str}`;
-        return `https://linkedin.com/in/${str}`;
-    }
-    return str;
-}
+
 
 // دالة لتنسيق نص الخدمات وجعله قائمة مقروءة
 function formatServices(text) {
