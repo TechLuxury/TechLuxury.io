@@ -1030,14 +1030,28 @@ function formatSocialUrl(platform, value) {
 function formatServices(text) {
     if (!text) return "";
     let formatted = escapeHtml(text);
-    // إذا كان النص مكتوباً كفقرة واحدة (بدون أسطر جديدة)
-    if (!formatted.includes('\n')) {
-        // نقوم بإضافة فاصل (سطر جديد) قبل كل إيموجي لتبدو كقائمة
-        formatted = formatted.replace(/([\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}])/gu, '<br>$1');
-        // إزالة الفاصل الأول إذا بدأ النص بإيموجي
-        if (formatted.startsWith('<br>')) {
-            formatted = formatted.substring(4);
-        }
+    
+    // إذا كان النص يحتوي على أسطر جديدة بالفعل، نتركه كما هو
+    if (formatted.includes('\n')) return formatted;
+    
+    // 1. إضافة فاصل قبل الإيموجي
+    formatted = formatted.replace(/([\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}])/gu, '<br>$1');
+    
+    // 2. إضافة فاصل بعد النقطة إذا كانت تتبعها مسافة
+    formatted = formatted.replace(/\.\s+/g, '.<br>');
+    
+    // 3. إضافة فاصل قبل الشرطات أو النقاط أو الأرقام التسلسلية
+    formatted = formatted.replace(/([\-•*])\s+/g, '<br>$1 ');
+    
+    // 4. إضافة فاصل قبل كلمة "إضافة" (لأن نصك يحتوي عليها كثيراً)
+    formatted = formatted.replace(/\s+(إضافة)/g, '<br>$1');
+    
+    // 5. إضافة فاصل قبل كلمة "الشعر" أو "موسيقى" (كلمات مفتاحية في نصك)
+    formatted = formatted.replace(/\s+(الشعر|موسيقى|الصورة)/g, '<br>$1');
+
+    // إزالة الفاصل الأول إذا بدأ النص بإيموجي
+    if (formatted.startsWith('<br>')) {
+        formatted = formatted.substring(4);
     }
     return formatted;
 }
