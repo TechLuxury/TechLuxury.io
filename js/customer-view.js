@@ -1006,6 +1006,56 @@ function cleanWebsite(u) {
 }
 function displayWebsite(u) { return String(u).replace(/^https?:\/\//i, "").replace(/\/$/, ""); }
 
+// ============================================================
+// 🛠️ دوال مساعدة لتنسيق بيانات بطاقة العمل
+// ============================================================
+
+// دالة تنسيق روابط السوشيال ميديا
+function formatSocialUrl(platform, value) {
+    let str = String(value).trim();
+    if (!str) return "";
+    if (/^https?:\/\//i.test(str)) return str;
+    str = str.replace(/^@/, "").replace(/^\/+/, "");
+    
+    if (platform === 'facebook') return `https://facebook.com/${str}`;
+    if (platform === 'instagram') return `https://instagram.com/${str}`;
+    if (platform === 'linkedin') {
+        if (str.includes('/')) return `https://linkedin.com/${str}`;
+        return `https://linkedin.com/in/${str}`;
+    }
+    return str;
+}
+
+// دالة تنسيق نص الخدمات والنبذة وجعله قائمة مقروءة
+function formatServices(text) {
+    if (!text) return "";
+    let formatted = escapeHtml(text);
+    // إذا كان النص مكتوباً كفقرة واحدة (بدون أسطر جديدة)
+    if (!formatted.includes('\n')) {
+        // نقوم بإضافة فاصل (سطر جديد) قبل كل إيموجي لتبدو كقائمة
+        formatted = formatted.replace(/([\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}])/gu, '<br>$1');
+        // إزالة الفاصل الأول إذا بدأ النص بإيموجي
+        if (formatted.startsWith('<br>')) {
+            formatted = formatted.substring(4);
+        }
+    }
+    return formatted;
+}
+
+// دالة اختصار روابط الخرائط الطويلة
+function getAddressLabel(address) {
+    if (!address) return "";
+    let str = String(address).trim();
+    // إذا كان النص عبارة عن رابط خرائط جوجل، نعرض نصاً بديلاً
+    if (str.includes("maps.app.goo.gl") || str.includes("google.com/maps") || str.startsWith("http")) {
+        return "📍 عرض الموقع على الخريطة";
+    }
+    return escapeHtml(str);
+}
+
+// ============================================================
+// 💼 دالة عرض بطاقة العمل (المعدلة)
+// ============================================================
 async function renderBusinessCard(card, typeInfo) {
     const phones = toArray(card.phone);
     const websites = toArray(card.website);
@@ -1015,6 +1065,10 @@ async function renderBusinessCard(card, typeInfo) {
     const emails = toArray(card.email);
 
     const logoUrl = card.logoUrl || "";
+
+    // ✨ تنسيق الخدمات والنبذة
+    const formattedBio = card.bio ? formatServices(card.bio) : "";
+    const formattedServices = card.services ? formatServices(card.services) : "";
 
     const contacts = [];
     phones.forEach(num => {
@@ -1030,8 +1084,10 @@ async function renderBusinessCard(card, typeInfo) {
     websites.forEach(site => {
         contacts.push(`<a href="${cleanWebsite(site)}" target="_blank" class="biz-contact-btn full-width"><i class="fa-solid fa-globe"></i> ${escapeHtml(displayWebsite(site))}</a>`);
     });
+    
+    // ✨ استخدام الدالة المختصرة للعنوان
     if (card.address) {
-        contacts.push(`<a href="https://maps.google.com/?q=${encodeURIComponent(card.address)}" target="_blank" class="biz-contact-btn full-width"><i class="fa-solid fa-location-dot"></i> ${escapeHtml(card.address)}</a>`);
+        contacts.push(`<a href="https://maps.google.com/?q=${encodeURIComponent(card.address)}" target="_blank" class="biz-contact-btn full-width"><i class="fa-solid fa-location-dot"></i> ${getAddressLabel(card.address)}</a>`);
     }
 
     const socials = [];
@@ -1059,8 +1115,11 @@ async function renderBusinessCard(card, typeInfo) {
             <h1 class="biz-name">${escapeHtml(card.name) || "بطاقة عمل"}</h1>
             ${card.jobTitle ? `<p class="biz-job">${escapeHtml(card.jobTitle)}</p>` : ""}
             ${card.company ? `<p class="biz-company">${escapeHtml(card.company)}</p>` : ""}
-            ${card.bio ? `<div class="biz-section"><div class="biz-section-title"><i class="fa-solid fa-user"></i> نبذة</div><div class="biz-section-content">${escapeHtml(card.bio)}</div></div>` : ""}
-            ${card.services ? `<div class="biz-section"><div class="biz-section-title"><i class="fa-solid fa-briefcase"></i> الخدمات</div><div class="biz-section-content">${escapeHtml(card.services)}</div></div>` : ""}
+            
+            ${formattedBio ? `<div class="biz-section"><div class="biz-section-title"><i class="fa-solid fa-user"></i> نبذة</div><div class="biz-section-content">${formattedBio}</div></div>` : ""}
+            
+            ${formattedServices ? `<div class="biz-section"><div class="biz-section-title"><i class="fa-solid fa-briefcase"></i> الخدمات</div><div class="biz-section-content">${formattedServices}</div></div>` : ""}
+            
             ${contacts.length > 0 ? `<div class="biz-contacts">${contacts.join("")}</div>` : ""}
             ${socials.length > 0 ? `<div class="biz-socials">${socials.join("")}</div>` : ""}
         </div>
@@ -1446,6 +1505,32 @@ function formatSocialUrl(platform, value) {
     return str;
 }
 
+// دالة لتنسيق نص الخدمات وجعله قائمة مقروءة
+function formatServices(text) {
+    if (!text) return "";
+    let formatted = escapeHtml(text);
+    // إذا كان النص مكتوباً كفقرة واحدة (بدون أسطر جديدة)
+    if (!formatted.includes('\n')) {
+        // نقوم بإضافة فاصل (سطر جديد) قبل كل إيموجي لتبدو كقائمة
+        formatted = formatted.replace(/([\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}])/gu, '<br>$1');
+        // إزالة الفاصل الأول إذا بدأ النص بإيموجي
+        if (formatted.startsWith('<br>')) {
+            formatted = formatted.substring(4);
+        }
+    }
+    return formatted;
+}
+
+// دالة لاختصار روابط الخرائط الطويلة
+function getAddressLabel(address) {
+    if (!address) return "";
+    let str = String(address).trim();
+    // إذا كان النص عبارة عن رابط خرائط جوجل، نعرض نصاً بديلاً
+    if (str.includes("maps.app.goo.gl") || str.includes("google.com/maps") || str.startsWith("http")) {
+        return "📍 عرض الموقع على الخريطة";
+    }
+    return escapeHtml(str);
+}
 
 // ===== بدء التشغيل =====
 init();
