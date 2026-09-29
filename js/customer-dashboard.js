@@ -173,7 +173,7 @@ let newBgMusicFile = null;
 let petNewPhoto = null;
 let petCurrentPhoto = "";
 
-// 🔐 المفتاح الحالي (يُشتق من الإجابة السرية)
+// 🔐 المفتاح الحالي
 let currentEncryptionKey = null;
 
 // ===== دوال مساعدة =====
@@ -204,7 +204,7 @@ function focusLastInput(containerId) {
     if (inputs.length) inputs[inputs.length - 1].focus();
 }
 
-// ===== ✅ دالة escapeHtml (لمنع XSS) =====
+// ===== ✅ دالة escapeHtml =====
 function escapeHtml(text) {
     if (text === null || text === undefined) return "";
     const div = document.createElement("div");
@@ -212,7 +212,7 @@ function escapeHtml(text) {
     return div.innerHTML;
 }
 
-// ===== ✅ التحقق من الملفات قبل الرفع =====
+// ===== ✅ التحقق من الملفات =====
 function validateFile(file, type) {
     const limits = {
         image: { maxSize: 15 * 1024 * 1024, mainType: "image" },
@@ -253,7 +253,7 @@ function validateFile(file, type) {
 }
 
 // ============================================================
-// 🆕 دالة عرض القوائم الاجتماعية (Render Social List)
+// 🎨 دالة عرض القوائم الاجتماعية
 // ============================================================
 function renderSocialList(containerId, list, placeholder, iconClass, color) {
     const container = document.getElementById(containerId);
@@ -290,7 +290,7 @@ function renderSocialList(containerId, list, placeholder, iconClass, color) {
 }
 
 // ============================================================
-// 🆕 دوال Render لكل قائمة
+// 🎨 دوال Render لكل قائمة
 // ============================================================
 function renderInstagramList() {
     renderSocialList("instagramList", bizInstagramList, "@username", "fa-brands fa-instagram", "#e1306c");
@@ -312,20 +312,45 @@ function renderLinkedinList() {
 }
 
 // ============================================================
-// 🆕 مستمعات الأزرار الجديدة
+// 🔘 مستمعات أزرار بطاقة العمل (الست كلها) ✅
 // ============================================================
+
+// 📞 إضافة رقم هاتف
+document.getElementById("btnAddPhone")?.addEventListener("click", () => {
+    bizPhoneList.push("");
+    renderPhoneList();
+    focusLastInput("phoneList");
+});
+
+// 🖼️ إضافة حساب إنستغرام
+document.getElementById("btnAddInstagram")?.addEventListener("click", () => {
+    bizInstagramList.push("");
+    renderInstagramList();
+    focusLastInput("instagramList");
+});
+
+// 🌐 إضافة موقع / رابط
+document.getElementById("btnAddWebsite")?.addEventListener("click", () => {
+    bizWebsiteList.push("");
+    renderWebsiteList();
+    focusLastInput("websiteList");
+});
+
+// 💬 إضافة رقم واتساب
 document.getElementById("btnAddWhatsapp")?.addEventListener("click", () => {
     bizWhatsappList.push("");
     renderWhatsappList();
     focusLastInput("whatsappList");
 });
 
+// 📘 إضافة رابط فيسبوك
 document.getElementById("btnAddFacebook")?.addEventListener("click", () => {
     bizFacebookList.push("");
     renderFacebookList();
     focusLastInput("facebookList");
 });
 
+// 💼 إضافة رابط لينكد إن
 document.getElementById("btnAddLinkedin")?.addEventListener("click", () => {
     bizLinkedinList.push("");
     renderLinkedinList();
@@ -664,7 +689,6 @@ async function openEditModal(cardId, card) {
 // 🔄 إعادة تعيين الحالة
 // ============================================================
 function resetFormState() {
-    // ===== المصفوفات =====
     giftNewImages = [];
     giftCurrentImages = [];
     giftImagesToDelete = [];
@@ -684,7 +708,6 @@ function resetFormState() {
     petCurrentPhoto = "";
     eventsState = [];
 
-    // ===== الحقول النصية =====
     const ids = [
         "giftTitle", "giftMessage", "bookTitle",
         "bizName", "bizJobTitle", "bizCompany", "bizBio", "bizServices",
@@ -699,21 +722,18 @@ function resetFormState() {
         if (el) el.value = "";
     });
 
-    // ===== حقول الملفات =====
     const fileIds = ["giftImages", "giftVideo", "bizLogo", "editBgMusic", "petPhoto"];
     fileIds.forEach(id => {
         const el = document.getElementById(id);
         if (el) el.value = "";
     });
 
-    // ===== رسائل الحالة =====
     const statusIds = ["giftImagesStatus", "giftVideoStatus", "bizLogoStatus", "bgMusicStatus", "petPhotoStatus"];
     statusIds.forEach(id => {
         const el = document.getElementById(id);
         if (el) el.textContent = "";
     });
 
-    // ===== حاويات DOM =====
     const giftCurrentImagesEl = document.getElementById("giftCurrentImages");
     if (giftCurrentImagesEl) giftCurrentImagesEl.innerHTML = "";
 
@@ -729,7 +749,6 @@ function resetFormState() {
     const eventsListEl = document.getElementById("eventsList");
     if (eventsListEl) eventsListEl.innerHTML = "";
 
-    // ✅ تفريغ كل قوائم بطاقة العمل
     ["instagramList", "phoneList", "websiteList", "whatsappList", "facebookList", "linkedinList"]
         .forEach(id => {
             const el = document.getElementById(id);
@@ -850,23 +869,34 @@ async function showCardFields(card) {
         const bizGoogleReviewEl = document.getElementById("bizGoogleReview");
         if (bizGoogleReviewEl) bizGoogleReviewEl.value = card.googleReview || "";
 
-        // ✅ كل القوائم الاجتماعية
+        // ✅ Instagram
         bizInstagramList = toArray(card.instagram);
+        if (bizInstagramList.length === 0) bizInstagramList.push("");
         renderInstagramList();
 
+        // ✅ Phone
         bizPhoneList = toArray(card.phone);
+        if (bizPhoneList.length === 0) bizPhoneList.push("");
         renderPhoneList();
 
+        // ✅ Website
         bizWebsiteList = toArray(card.website);
+        if (bizWebsiteList.length === 0) bizWebsiteList.push("");
         renderWebsiteList();
 
+        // ✅ WhatsApp
         bizWhatsappList = toArray(card.whatsapp);
+        if (bizWhatsappList.length === 0) bizWhatsappList.push("");
         renderWhatsappList();
 
+        // ✅ Facebook
         bizFacebookList = toArray(card.facebook);
+        if (bizFacebookList.length === 0) bizFacebookList.push("");
         renderFacebookList();
 
+        // ✅ LinkedIn
         bizLinkedinList = toArray(card.linkedin);
+        if (bizLinkedinList.length === 0) bizLinkedinList.push("");
         renderLinkedinList();
 
         bizCurrentLogo = card.logoUrl || "";
@@ -1457,7 +1487,7 @@ document.getElementById("editCardForm")?.addEventListener("submit", async (e) =>
         }
 
         // ============================================================
-        // 💼 بطاقة عمل (✅ محدَّث بالكامل)
+        // 💼 بطاقة عمل
         // ============================================================
         if (selectedType.id === "business_card") {
             updatePayload.name = document.getElementById("bizName").value.trim();
@@ -1468,11 +1498,9 @@ document.getElementById("editCardForm")?.addEventListener("submit", async (e) =>
             updatePayload.email = document.getElementById("bizEmail").value.trim();
             updatePayload.address = document.getElementById("bizAddress").value.trim();
 
-            // ✅ Google Review
             const bizGoogleReviewEl = document.getElementById("bizGoogleReview");
             updatePayload.googleReview = bizGoogleReviewEl ? bizGoogleReviewEl.value.trim() : "";
 
-            // ✅ كل القوائم الاجتماعية كمصفوفات
             updatePayload.instagram = bizInstagramList.map(v => v.trim()).filter(v => v !== "");
             updatePayload.phone     = bizPhoneList.map(v => v.trim()).filter(v => v !== "");
             updatePayload.website   = bizWebsiteList.map(v => v.trim()).filter(v => v !== "");
@@ -1495,7 +1523,7 @@ document.getElementById("editCardForm")?.addEventListener("submit", async (e) =>
         }
 
         // ============================================================
-        // 🐾 بطاقة حيوانات (عامة)
+        // 🐾 بطاقة حيوانات
         // ============================================================
         if (selectedType.id === "pet_card") {
             updatePayload.petName = document.getElementById("petName").value.trim();
