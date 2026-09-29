@@ -281,150 +281,188 @@
                         </button>
                     </div>
 
+           
                     <!-- =========================
-                         Type: Business Card
-                    ========================== -->
-                    <div id="businessFields" class="hidden">
-                        <div class="form-group">
-                            <label for="bizName">
-                                <i class="fa-solid fa-user"></i>
-                                الاسم الكامل
-                            </label>
-                            <input type="text" id="bizName" placeholder="مثال: أحمد محمد">
-                        </div>
+     Type: Business Card
+========================== -->
+<div id="businessFields" class="hidden">
+    <div class="form-group">
+        <label for="bizName">
+            <i class="fa-solid fa-user"></i>
+            الاسم الكامل
+        </label>
+        <input type="text" id="bizName" placeholder="مثال: أحمد محمد">
+    </div>
 
-                        <div class="form-group">
-                            <label for="bizJobTitle">
-                                <i class="fa-solid fa-briefcase"></i>
-                                المسمى الوظيفي
-                            </label>
-                            <input type="text" id="bizJobTitle" placeholder="مثال: مدير التسويق">
-                        </div>
+    <div class="form-group">
+        <label for="bizJobTitle">
+            <i class="fa-solid fa-briefcase"></i>
+            المسمى الوظيفي
+        </label>
+        <input type="text" id="bizJobTitle" placeholder="مثال: مدير التسويق">
+    </div>
 
-                        <div class="form-group">
-                            <label for="bizCompany">
-                                <i class="fa-solid fa-building"></i>
-                                اسم المؤسسة / الشركة
-                            </label>
-                            <input type="text" id="bizCompany" placeholder="مثال: شركة تكس لاكشري">
-                        </div>
+    <div class="form-group">
+        <label for="bizCompany">
+            <i class="fa-solid fa-building"></i>
+            اسم المؤسسة / الشركة
+        </label>
+        <input type="text" id="bizCompany" placeholder="مثال: شركة تكس لاكشري">
+    </div>
 
-                        <div class="form-group">
-                            <label for="bizBio">
-                                <i class="fa-solid fa-align-right"></i>
-                                نبذة تعريفية
-                            </label>
-                            <textarea id="bizBio" rows="3" placeholder="اكتب نبذة قصيرة..."></textarea>
-                        </div>
+    <div class="form-group">
+        <label for="bizBio">
+            <i class="fa-solid fa-align-right"></i>
+            نبذة تعريفية
+        </label>
+        <textarea id="bizBio" rows="3" placeholder="اكتب نبذة قصيرة..."></textarea>
+    </div>
 
-                        <div class="form-group">
-                            <label for="bizServices">
-                                <i class="fa-solid fa-list-check"></i>
-                                الخدمات / ما تقدمه
-                            </label>
-                            <textarea id="bizServices" rows="3" placeholder="مثال: تصميم مواقع، تطبيقات..."></textarea>
-                        </div>
+    <div class="form-group">
+        <label for="bizServices">
+            <i class="fa-solid fa-list-check"></i>
+            الخدمات / ما تقدمه
+        </label>
+        <textarea id="bizServices" rows="3" placeholder="مثال: تصميم مواقع، تطبيقات..."></textarea>
+    </div>
 
-                        <h3 class="section-title">
-                            <i class="fa-solid fa-address-book"></i>
-                            معلومات التواصل
-                        </h3>
+    <!-- =========================
+         معلومات التواصل والتقييم
+    ========================== -->
+    <h3 class="section-title">
+        <i class="fa-solid fa-address-book"></i>
+        معلومات التواصل والخرائط
+    </h3>
 
-                        <div class="form-group">
-                            <label>
-                                <i class="fa-solid fa-phone"></i>
-                                أرقام الهاتف
-                            </label>
-                            <div id="phoneList" class="social-list"></div>
-                            <button type="button" id="btnAddPhone" class="btn-add-social">
-                                <i class="fa-solid fa-plus"></i>
-                                إضافة رقم هاتف
-                            </button>
-                        </div>
+    <!-- تقييم جوجل / رابط الخريطة -->
+    <div class="form-group">
+        <label for="bizGoogleReview">
+            <i class="fa-solid fa-star" style="color: #f59e0b;"></i>
+            رابط تقييم جوجل (Google Review) / الخريطة
+        </label>
+        <input type="url" id="bizGoogleReview" placeholder="https://g.page/r/.../review" dir="ltr">
+    </div>
 
-                        <div class="form-group">
-                            <label>
-                                <i class="fa-solid fa-globe"></i>
-                                المواقع الإلكترونية
-                            </label>
-                            <div id="websiteList" class="social-list"></div>
-                            <button type="button" id="btnAddWebsite" class="btn-add-social">
-                                <i class="fa-solid fa-plus"></i>
-                                إضافة موقع
-                            </button>
-                        </div>
+    <!-- أرقام الهاتف (متعدد) -->
+    <div class="form-group">
+        <label>
+            <i class="fa-solid fa-phone"></i>
+            أرقام الهاتف
+        </label>
+        <div id="phoneList" class="social-list"></div>
+        <button type="button" id="btnAddPhone" class="btn-add-social">
+            <i class="fa-solid fa-plus"></i> إضافة رقم هاتف
+        </button>
+    </div>
 
-                        <div class="form-group">
-                            <label for="bizEmail">
-                                <i class="fa-solid fa-envelope"></i>
-                                البريد الإلكتروني
-                            </label>
-                            <input type="email" id="bizEmail" placeholder="email@example.com" dir="ltr">
-                        </div>
+    <!-- الواتساب (متعدد) -->
+    <div class="form-group">
+        <label>
+            <i class="fa-brands fa-whatsapp" style="color: #22c55e;"></i>
+            أرقام الواتساب
+        </label>
+        <div id="whatsappList" class="social-list"></div>
+        <button type="button" id="btnAddWhatsapp" class="btn-add-social">
+            <i class="fa-solid fa-plus"></i> إضافة رقم واتساب
+        </button>
+    </div>
 
-                        <div class="form-group">
-                            <label for="bizAddress">
-                                <i class="fa-solid fa-location-dot"></i>
-                                العنوان
-                            </label>
-                            <input type="text" id="bizAddress" placeholder="عمّان، الأردن">
-                        </div>
+    <!-- البريد الإلكتروني -->
+    <div class="form-group">
+        <label for="bizEmail">
+            <i class="fa-solid fa-envelope"></i>
+            البريد الإلكتروني
+        </label>
+        <input type="email" id="bizEmail" placeholder="email@example.com" dir="ltr">
+    </div>
 
-                        <h3 class="section-title">
-                            <i class="fa-solid fa-share-nodes"></i>
-                            السوشيال ميديا
-                        </h3>
+    <!-- العنوان -->
+    <div class="form-group">
+        <label for="bizAddress">
+            <i class="fa-solid fa-location-dot"></i>
+            العنوان النصي
+        </label>
+        <input type="text" id="bizAddress" placeholder="عمّان، الأردن">
+    </div>
 
-                        <div class="form-group">
-                            <label>
-                                <i class="fa-brands fa-instagram"></i>
-                                حسابات إنستغرام
-                            </label>
-                            <div id="instagramList" class="social-list"></div>
-                            <button type="button" id="btnAddInstagram" class="btn-add-social">
-                                <i class="fa-solid fa-plus"></i>
-                                إضافة حساب
-                            </button>
-                        </div>
+    <!-- المواقع الإلكترونية (متعدد) -->
+    <div class="form-group">
+        <label>
+            <i class="fa-solid fa-globe"></i>
+            المواقع الإلكترونية / الروابط
+        </label>
+        <div id="websiteList" class="social-list"></div>
+        <button type="button" id="btnAddWebsite" class="btn-add-social">
+            <i class="fa-solid fa-plus"></i> إضافة موقع / رابط
+        </button>
+    </div>
 
-                        <div class="form-group">
-                            <label for="bizFacebook">
-                                <i class="fa-brands fa-facebook"></i>
-                                فيسبوك
-                            </label>
-                            <input type="text" id="bizFacebook" placeholder="facebook.com/page" dir="ltr">
-                        </div>
+    <!-- =========================
+         وسائل التواصل الاجتماعي (متعددة)
+    ========================== -->
+    <h3 class="section-title">
+        <i class="fa-solid fa-share-nodes"></i>
+        السوشيال ميديا
+    </h3>
 
-                        <div class="form-group">
-                            <label for="bizLinkedin">
-                                <i class="fa-brands fa-linkedin"></i>
-                                لينكد إن
-                            </label>
-                            <input type="text" id="bizLinkedin" placeholder="linkedin.com/in/..." dir="ltr">
-                        </div>
+    <!-- انستغرام -->
+    <div class="form-group">
+        <label>
+            <i class="fa-brands fa-instagram" style="color: #e1306c;"></i>
+            حسابات إنستغرام
+        </label>
+        <div id="instagramList" class="social-list"></div>
+        <button type="button" id="btnAddInstagram" class="btn-add-social">
+            <i class="fa-solid fa-plus"></i> إضافة حساب إنستغرام
+        </button>
+    </div>
 
-                        <h3 class="section-title">
-                            <i class="fa-solid fa-image"></i>
-                            الشعار / الصورة الشخصية
-                        </h3>
+    <!-- فيسبوك -->
+    <div class="form-group">
+        <label>
+            <i class="fa-brands fa-facebook" style="color: #1877f2;"></i>
+            حسابات فيسبوك
+        </label>
+        <div id="facebookList" class="social-list"></div>
+        <button type="button" id="btnAddFacebook" class="btn-add-social">
+            <i class="fa-solid fa-plus"></i> إضافة رابط فيسبوك
+        </button>
+    </div>
 
-                        <div class="form-group">
-                            <label>
-                                <i class="fa-solid fa-image"></i>
-                                الصورة الحالية
-                            </label>
-                            <div class="current-images-container" id="bizLogoContainer"></div>
-                        </div>
+    <!-- لينكد إن -->
+    <div class="form-group">
+        <label>
+            <i class="fa-brands fa-linkedin" style="color: #0a66c2;"></i>
+            حسابات لينكد إن
+        </label>
+        <div id="linkedinList" class="social-list"></div>
+        <button type="button" id="btnAddLinkedin" class="btn-add-social">
+            <i class="fa-solid fa-plus"></i> إضافة رابط لينكد إن
+        </button>
+    </div>
 
-                        <div class="form-group">
-                            <label for="bizLogo">
-                                <i class="fa-solid fa-upload"></i>
-                                رفع شعار / صورة جديدة
-                            </label>
-                            <input type="file" id="bizLogo" accept="image/*">
-                            <span class="file-status" id="bizLogoStatus"></span>
-                        </div>
-                    </div>
+    <h3 class="section-title">
+        <i class="fa-solid fa-image"></i>
+        الشعار / الصورة الشخصية
+    </h3>
+
+    <div class="form-group">
+        <label>
+            <i class="fa-solid fa-image"></i>
+            الصورة الحالية
+        </label>
+        <div class="current-images-container" id="bizLogoContainer"></div>
+    </div>
+
+    <div class="form-group">
+        <label for="bizLogo">
+            <i class="fa-solid fa-upload"></i>
+            رفع شعار / صورة جديدة
+        </label>
+        <input type="file" id="bizLogo" accept="image/*">
+        <span class="file-status" id="bizLogoStatus"></span>
+    </div>
+</div>
 
                     <!-- =========================
                          Type: Pet Card
