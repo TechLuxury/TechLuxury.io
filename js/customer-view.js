@@ -1061,54 +1061,123 @@ function formatServices(text) {
 // ============================================================
 // 💼 دالة عرض بطاقة العمل (المعدلة)
 // ============================================================
+// ============================================================
+// 💼 دالة عرض بطاقة العمل (محدَّثة لدعم Google Review و WhatsApp المستقل)
+// ============================================================
 async function renderBusinessCard(card, typeInfo) {
-    const phones = toArray(card.phone);
-    const websites = toArray(card.website);
-    const instagrams = toArray(card.instagram);
-    const facebook = toArray(card.facebook);
-    const linkedin = toArray(card.linkedin);
-    const emails = toArray(card.email);
+    // 📥 قراءة كل الحقول
+    const phones      = toArray(card.phone);
+    const websites    = toArray(card.website);
+    const instagrams  = toArray(card.instagram);
+    const whatsapps   = toArray(card.whatsapp);   // ✅ مصفوفة مستقلة
+    const facebooks   = toArray(card.facebook);
+    const linkedins   = toArray(card.linkedin);
+    const emails      = toArray(card.email);
+    const googleReview = (card.googleReview || "").trim(); // ✅ حقل جديد
 
     const logoUrl = card.logoUrl || "";
 
     // ✨ تنسيق الخدمات والنبذة
-    const formattedBio = card.bio ? formatServices(card.bio) : "";
+    const formattedBio      = card.bio      ? formatServices(card.bio)      : "";
     const formattedServices = card.services ? formatServices(card.services) : "";
 
+    // ============================================================
+    // 📞 جهات الاتصال
+    // ============================================================
     const contacts = [];
+
+    // 📞 أرقام الهاتف
     phones.forEach(num => {
-        contacts.push(`<a href="tel:${cleanPhone(num)}" class="biz-contact-btn"><i class="fa-solid fa-phone"></i> ${escapeHtml(num)}</a>`);
+        contacts.push(`
+            <a href="tel:${cleanPhone(num)}" class="biz-contact-btn">
+                <i class="fa-solid fa-phone"></i> ${escapeHtml(num)}
+            </a>
+        `);
     });
+
+    // 📧 البريد الإلكتروني
     emails.forEach(mail => {
-        contacts.push(`<a href="mailto:${mail}" class="biz-contact-btn"><i class="fa-solid fa-envelope"></i> راسلني</a>`);
+        contacts.push(`
+            <a href="mailto:${escapeHtml(mail)}" class="biz-contact-btn">
+                <i class="fa-solid fa-envelope"></i> ${escapeHtml(mail)}
+            </a>
+        `);
     });
-    phones.forEach(num => {
+
+    // 💬 أرقام الواتساب (من المصفوفة المستقلة)
+    whatsapps.forEach(num => {
         const waNum = cleanPhone(num).replace(/^\+/, "");
-        contacts.push(`<a href="https://wa.me/${waNum}" target="_blank" class="biz-contact-btn full-width"><i class="fa-brands fa-whatsapp"></i> واتساب: ${escapeHtml(num)}</a>`);
+        contacts.push(`
+            <a href="https://wa.me/${waNum}" target="_blank" class="biz-contact-btn full-width">
+                <i class="fa-brands fa-whatsapp"></i> واتساب: ${escapeHtml(num)}
+            </a>
+        `);
     });
+
+    // 🌐 المواقع الإلكترونية
     websites.forEach(site => {
-        contacts.push(`<a href="${cleanWebsite(site)}" target="_blank" class="biz-contact-btn full-width"><i class="fa-solid fa-globe"></i> ${escapeHtml(displayWebsite(site))}</a>`);
+        contacts.push(`
+            <a href="${cleanWebsite(site)}" target="_blank" class="biz-contact-btn full-width">
+                <i class="fa-solid fa-globe"></i> ${escapeHtml(displayWebsite(site))}
+            </a>
+        `);
     });
-    
-    // ✨ استخدام الدالة المختصرة للعنوان
-    if (card.address) {
-        contacts.push(`<a href="https://maps.google.com/?q=${encodeURIComponent(card.address)}" target="_blank" class="biz-contact-btn full-width"><i class="fa-solid fa-location-dot"></i> ${getAddressLabel(card.address)}</a>`);
+
+    // ⭐ تقييم Google
+    if (googleReview) {
+        contacts.push(`
+            <a href="${cleanWebsite(googleReview)}" target="_blank"
+               class="biz-contact-btn full-width biz-btn-google">
+                <i class="fa-solid fa-star"></i> قيّمنا على Google
+            </a>
+        `);
     }
 
+    // 📍 العنوان
+    if (card.address) {
+        contacts.push(`
+            <a href="https://maps.google.com/?q=${encodeURIComponent(card.address)}"
+               target="_blank" class="biz-contact-btn full-width">
+                <i class="fa-solid fa-location-dot"></i> ${getAddressLabel(card.address)}
+            </a>
+        `);
+    }
+
+    // ============================================================
+    // 🔗 السوشيال ميديا (أيقونات دائرية)
+    // ============================================================
     const socials = [];
+
     instagrams.forEach(acc => {
-        socials.push(`<a href="${formatSocialUrl('instagram', acc)}" target="_blank" class="biz-social-btn instagram"><i class="fa-brands fa-instagram"></i></a>`);
-    });
-    facebook.forEach(fb => {
-        socials.push(`<a href="${formatSocialUrl('facebook', fb)}" target="_blank" class="biz-social-btn facebook"><i class="fa-brands fa-facebook-f"></i></a>`);
-    });
-    linkedin.forEach(li => {
-        socials.push(`<a href="${formatSocialUrl('linkedin', li)}" target="_blank" class="biz-social-btn linkedin"><i class="fa-brands fa-linkedin-in"></i></a>`);
-    });
-    websites.forEach(site => {
-        socials.push(`<a href="${cleanWebsite(site)}" target="_blank" class="biz-social-btn website"><i class="fa-solid fa-globe"></i></a>`);
+        socials.push(`
+            <a href="${formatSocialUrl('instagram', acc)}" target="_blank"
+               class="biz-social-btn instagram" title="Instagram">
+                <i class="fa-brands fa-instagram"></i>
+            </a>
+        `);
     });
 
+    facebooks.forEach(fb => {
+        socials.push(`
+            <a href="${formatSocialUrl('facebook', fb)}" target="_blank"
+               class="biz-social-btn facebook" title="Facebook">
+                <i class="fa-brands fa-facebook-f"></i>
+            </a>
+        `);
+    });
+
+    linkedins.forEach(li => {
+        socials.push(`
+            <a href="${formatSocialUrl('linkedin', li)}" target="_blank"
+               class="biz-social-btn linkedin" title="LinkedIn">
+                <i class="fa-brands fa-linkedin-in"></i>
+            </a>
+        `);
+    });
+
+    // ============================================================
+    // 🖥️ بناء الواجهة
+    // ============================================================
     viewContainer.innerHTML = `
         <div class="biz-card">
             <div class="biz-logo-wrapper">
@@ -1117,20 +1186,35 @@ async function renderBusinessCard(card, typeInfo) {
                     : `<div class="biz-logo-placeholder"><i class="fa-solid fa-user"></i></div>`
                 }
             </div>
+
             <h1 class="biz-name">${escapeHtml(card.name) || "بطاقة عمل"}</h1>
             ${card.jobTitle ? `<p class="biz-job">${escapeHtml(card.jobTitle)}</p>` : ""}
-            ${card.company ? `<p class="biz-company">${escapeHtml(card.company)}</p>` : ""}
-            
-            ${formattedBio ? `<div class="biz-section"><div class="biz-section-title"><i class="fa-solid fa-user"></i> نبذة</div><div class="biz-section-content">${formattedBio}</div></div>` : ""}
-            
-            ${formattedServices ? `<div class="biz-section"><div class="biz-section-title"><i class="fa-solid fa-briefcase"></i> الخدمات</div><div class="biz-section-content">${formattedServices}</div></div>` : ""}
-            
-            ${contacts.length > 0 ? `<div class="biz-contacts">${contacts.join("")}</div>` : ""}
-            ${socials.length > 0 ? `<div class="biz-socials">${socials.join("")}</div>` : ""}
+            ${card.company  ? `<p class="biz-company">${escapeHtml(card.company)}</p>` : ""}
+
+            ${formattedBio
+                ? `<div class="biz-section">
+                       <div class="biz-section-title"><i class="fa-solid fa-user"></i> نبذة</div>
+                       <div class="biz-section-content">${formattedBio}</div>
+                   </div>`
+                : ""}
+
+            ${formattedServices
+                ? `<div class="biz-section">
+                       <div class="biz-section-title"><i class="fa-solid fa-briefcase"></i> الخدمات</div>
+                       <div class="biz-section-content">${formattedServices}</div>
+                   </div>`
+                : ""}
+
+            ${contacts.length > 0
+                ? `<div class="biz-contacts">${contacts.join("")}</div>`
+                : ""}
+
+            ${socials.length > 0
+                ? `<div class="biz-socials">${socials.join("")}</div>`
+                : ""}
         </div>
     `;
 }
-
 // ============================================================
 // 🐾 بطاقة الحيوانات
 // ============================================================
