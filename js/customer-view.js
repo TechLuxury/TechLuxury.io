@@ -712,31 +712,6 @@ function setupGiftEnvelope() {
 }
 
 
-    // الضغط بالماوس أو اللمس
-    envelope.addEventListener(
-        "click",
-        openEnvelope
-    );
-
-
-    // دعم Enter و Space
-    envelope.addEventListener(
-        "keydown",
-        (e) => {
-
-            if (
-                e.key === "Enter" ||
-                e.key === " "
-            ) {
-
-                e.preventDefault();
-
-                openEnvelope();
-            }
-
-        }
-    );
-
 // ============================================================
 // 📖 كتاب الذكريات
 // ============================================================
