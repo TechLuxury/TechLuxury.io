@@ -338,39 +338,23 @@
         transform 0.9s cubic-bezier(.2,.8,.2,1);
 }
 
-
 /* ============================================================
-   📜 الورقة داخل الظرف
+   📜 الورقة داخل الظرف (تحتوي الرسالة)
    ============================================================ */
 
 .gift-letter {
-
     position: absolute;
-
     left: 8%;
     width: 84%;
-
     bottom: 35px;
-
     height: 210px;
 
-    background:
-        linear-gradient(
-            135deg,
-            #fffdf7,
-            #fff7ed
-        );
-
+    background: linear-gradient(135deg, #fffdf7, #fff7ed);
     border-radius: 8px;
-
-    box-shadow:
-        0 8px 25px rgba(0,0,0,0.16);
-
+    box-shadow: 0 8px 25px rgba(0,0,0,0.16);
     z-index: 2;
 
-    transform:
-        translateY(130px);
-
+    transform: translateY(130px);
     opacity: 0;
 
     transition:
@@ -380,55 +364,79 @@
     overflow: hidden;
 }
 
+/* عند الفتح — تصبح الورقة قابلة للتمرير إن طالت الرسالة */
+.gift-envelope-wrapper.opened .gift-letter {
+    transform: translateY(-105px);
+    opacity: 1;
+    z-index: 7;
+    overflow-y: auto;
+    overflow-x: hidden;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(236,72,153,0.4) transparent;
+    -webkit-overflow-scrolling: touch;
+}
 
-/* محتوى الورقة */
+.gift-envelope-wrapper.opened .gift-letter::-webkit-scrollbar {
+    width: 5px;
+}
+.gift-envelope-wrapper.opened .gift-letter::-webkit-scrollbar-track {
+    background: transparent;
+}
+.gift-envelope-wrapper.opened .gift-letter::-webkit-scrollbar-thumb {
+    background: rgba(236,72,153,0.4);
+    border-radius: 3px;
+}
+
+/* ============================================================
+   محتوى الورقة
+   ============================================================ */
 
 .gift-letter-content {
-
-    height: 100%;
-
     display: flex;
-
-    flex-direction: column;
-
-    align-items: center;
-    justify-content: center;
-
-    text-align: center;
-
-    padding: 20px;
-
+    min-height: 100%;
+    padding: 20px 16px;
     box-sizing: border-box;
 }
 
-
-.gift-letter-icon {
-
-    font-size: 38px;
-
-    margin-bottom: 10px;
+.gift-letter-inner {
+    margin: auto;                /* يوسّط المحتوى عمودياً وأفقياً */
+    width: 100%;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
 }
 
+.gift-letter-icon {
+    font-size: 32px;
+    line-height: 1;
+}
 
 .gift-letter-title {
-
-    font-size: 20px;
-
+    font-size: 16px;
     font-weight: 700;
-
     color: #be185d;
 }
 
-
-.gift-letter-hint {
-
-    margin-top: 7px;
-
-    font-size: 13px;
-
-    color: #9f1239;
+.gift-letter-divider {
+    width: 50px;
+    height: 2px;
+    margin: 8px auto 10px;
+    background: linear-gradient(90deg, transparent, #ec4899, transparent);
 }
 
+.gift-letter-message {
+    margin: 0;
+    width: 100%;
+    color: #374151;
+    font-size: 14px;
+    line-height: 1.85;
+    white-space: pre-wrap;
+    word-break: break-word;
+    text-align: center;
+    font-weight: 500;
+}
 
 /* ============================================================
    👆 نص الضغط
@@ -746,117 +754,31 @@
 
 @media (max-width: 600px) {
 
-    .gift-message-section {
-        margin-top: 20px;
-        padding: 0 10px;
-    }
-
-
-   .gift-envelope-wrapper {
-        min-height: 360px;
-        justify-content: center; /* تأكيد التمركز في الهاتف */
-    }
-
-
-    .gift-envelope {
-
-        width: min(92vw, 400px);
-
-        height: 250px;
-    }
-
-
-    .envelope-body {
-
-        height: 175px;
-
-        border-radius: 8px;
-    }
-
-
-    .envelope-body::before {
-
-        border-top-width: 87px;
-        border-bottom-width: 87px;
-
-        border-left-width: min(46vw, 200px);
-    }
-
-
-    .envelope-body::after {
-
-        border-top-width: 87px;
-        border-bottom-width: 87px;
-
-        border-right-width: min(46vw, 200px);
-    }
-
-
-    .envelope-flap {
-
-        top: 25px;
-
-        border-left-width: min(46vw, 200px);
-        border-right-width: min(46vw, 200px);
-
-        border-top-width: 110px;
-    }
-
-
     .gift-letter {
-
         height: 175px;
-
         bottom: 30px;
     }
 
-
-    .gift-envelope-wrapper.opened
-    .gift-letter {
-
-        transform:
-            translateY(-90px);
+    .gift-envelope-wrapper.opened .gift-letter {
+        transform: translateY(-90px);
     }
 
-
-    .envelope-heart {
-
-        width: 48px;
-        height: 48px;
-
-        font-size: 23px;
+    .gift-letter-content {
+        padding: 14px 12px;
     }
 
-    .gift-message-content {
-        width: 88%;
-        max-width: 320px; /* حجم أصغر للهواتف */
-    }
-    .gift-message-paper {
-
-        padding: 20px 15px;
-        border-radius: 15px;
+    .gift-letter-icon {
+        font-size: 26px;
     }
 
-
-    .gift-message-text {
-
-        font-size: 15px;
-
-        line-height: 1.9;
+    .gift-letter-title {
+        font-size: 14px;
     }
 
-
-    .gift-message-icon {
-
-        font-size: 34px;
-    }
-
-
-    .gift-message-label {
-
+    .gift-letter-message {
         font-size: 13px;
+        line-height: 1.8;
     }
-
 }
 
 
