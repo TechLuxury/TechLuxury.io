@@ -548,124 +548,50 @@ async function renderGiftCard(card, typeInfo) {
 
     ` : "";
 
+// ========================================================
+// 💌 الظرف (الرسالة داخل الورقة مباشرة)
+// ========================================================
+const messageEnvelopeHtml = messageText
+    ? `
+    <section class="gift-message-section" aria-label="رسالة الهدية">
+        <div class="gift-envelope-wrapper" id="giftEnvelopeWrapper">
 
-    // ========================================================
-    // 💌 الظرف
-    // ========================================================
-    const messageEnvelopeHtml = messageText
-        ? `
+            <button type="button" class="gift-envelope" id="giftEnvelope" aria-label="فتح الرسالة">
 
-        <section
-            class="gift-message-section"
-            aria-label="رسالة الهدية"
-        >
-
-            <div
-                class="gift-envelope-wrapper"
-                id="giftEnvelopeWrapper"
-            >
-
-                <!-- الظرف -->
-                <button
-                    type="button"
-                    class="gift-envelope"
-                    id="giftEnvelope"
-                    aria-label="فتح الرسالة"
-                >
-
-                    <!-- الورقة داخل الظرف -->
-                    <div class="gift-letter">
-
-                        <div class="gift-letter-content">
-
-                            <div class="gift-letter-icon">
-                                💌
-                            </div>
-
-                            <div class="gift-letter-title">
-                                رسالة خاصة لك
-                            </div>
-
-                            <div class="gift-letter-hint">
-                                ستظهر الرسالة هنا
-                            </div>
-
+                <!-- الورقة داخل الظرف — تحتوي الرسالة نفسها -->
+                <div class="gift-letter">
+                    <div class="gift-letter-content">
+                        <div class="gift-letter-inner">
+                            <div class="gift-letter-icon">💌</div>
+                            <div class="gift-letter-title">رسالة خاصة لك</div>
+                            <div class="gift-letter-divider"></div>
+                            <p class="gift-letter-message">${escapeHtml(messageText)}</p>
                         </div>
-
                     </div>
-
-
-                    <!-- جسم الظرف -->
-                    <div class="envelope-body">
-
-                        <div class="envelope-heart">
-                            ♥
-                        </div>
-
-                    </div>
-
-
-                    <!-- غطاء الظرف -->
-                    <div class="envelope-flap"></div>
-
-
-                    <!-- زر الفتح -->
-                    <div class="envelope-open-text">
-
-                        <i class="fa-solid fa-hand-pointer"></i>
-
-                        <span>
-                            اضغط لفتح الرسالة
-                        </span>
-
-                    </div>
-
-                </button>
-
-
-                <!-- النص الذي يظهر بعد الفتح -->
-                <div
-                    class="gift-message-content"
-                    id="giftMessageContent"
-                    aria-hidden="true"
-                >
-
-                    <div class="gift-message-paper">
-
-                        <div class="gift-message-decoration top">
-                            ✦
-                        </div>
-
-                        <div class="gift-message-icon">
-                            💌
-                        </div>
-
-                        <div class="gift-message-label">
-                            رسالة خاصة لك
-                        </div>
-
-                        <div class="gift-message-divider"></div>
-
-                        <p class="gift-message-text">
-                            ${escapeHtml(messageText)}
-                        </p>
-
-                        <div class="gift-message-decoration bottom">
-                            ✦
-                        </div>
-
-                    </div>
-
                 </div>
 
-            </div>
+                <!-- جسم الظرف -->
+                <div class="envelope-body">
+                    <div class="envelope-heart">♥</div>
+                </div>
 
-        </section>
+                <!-- غطاء الظرف -->
+                <div class="envelope-flap"></div>
 
+                <!-- زر الفتح -->
+                <div class="envelope-open-text">
+                    <i class="fa-solid fa-hand-pointer"></i>
+                    <span>اضغط لفتح الرسالة</span>
+                </div>
+
+            </button>
+
+        </div>
+    </section>
     `
-        : "";
+    : "";
 
-
+    
     // ========================================================
     // 🖥️ بناء واجهة الكرت
     // ========================================================
@@ -758,70 +684,32 @@ async function renderGiftCard(card, typeInfo) {
 // ============================================================
 // 💌 تشغيل ظرف الرسالة
 // ============================================================
+// ============================================================
+// 💌 تشغيل ظرف الرسالة
+// ============================================================
 function setupGiftEnvelope() {
-
     const envelope = document.getElementById("giftEnvelope");
+    const wrapper  = document.getElementById("giftEnvelopeWrapper");
 
-    const wrapper = document.getElementById(
-        "giftEnvelopeWrapper"
-    );
-
-    const messageContent = document.getElementById(
-        "giftMessageContent"
-    );
-
-    if (!envelope || !wrapper || !messageContent) {
-        return;
-    }
-
+    if (!envelope || !wrapper) return;
 
     let opened = false;
 
-
     const openEnvelope = () => {
-
         if (opened) return;
-
         opened = true;
-
-
-        // منع الضغط المتكرر
         envelope.disabled = true;
-
-
-        // فتح الظرف
         wrapper.classList.add("opened");
-
-
-        // بعد فتح الغطاء وخروج الورقة
-        setTimeout(() => {
-
-            messageContent.classList.add(
-                "visible"
-            );
-
-            messageContent.setAttribute(
-                "aria-hidden",
-                "false"
-            );
-
-        }, 700);
-
-
-        // تمرير بسيط للرسالة على الهاتف
-        setTimeout(() => {
-
-            if (messageContent) {
-
-                messageContent.scrollIntoView({
-                    behavior: "smooth",
-                    block: "center"
-                });
-
-            }
-
-        }, 1100);
     };
+
+    envelope.addEventListener("click", openEnvelope);
+    envelope.addEventListener("keydown", (e) => {
+        if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            openEnvelope();
+        }
+    });
+}
 
 
     // الضغط بالماوس أو اللمس
