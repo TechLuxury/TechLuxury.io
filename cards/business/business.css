@@ -1,0 +1,233 @@
+/* ============================================================
+   💼 Business Card — Isolated Styles
+   ============================================================ */
+
+.tl-business-card {
+    max-width: 560px;
+    margin: 0 auto;
+    background: var(--bg-card, #111827);
+    border: 1px solid var(--border, rgba(255,255,255,0.08));
+    border-radius: 24px;
+    padding: clamp(1.5rem, 4vw, 2.25rem) clamp(1rem, 3vw, 1.75rem);
+    text-align: center;
+    box-shadow: var(--shadow-lg, 0 20px 50px rgba(0,0,0,0.45));
+    position: relative;
+    overflow: hidden;
+}
+
+.tl-business-card::before {
+    content: '';
+    position: absolute;
+    top: 0; inset-inline: 0;
+    height: 100px;
+    background: linear-gradient(135deg, #3b82f6, transparent);
+    opacity: 0.14;
+    pointer-events: none;
+}
+
+/* ============================================================
+   Logo — banner style, height-capped
+   ============================================================ */
+.tl-business-logo-wrapper {
+    position: relative;
+    display: block;
+    width: 100%;
+    max-width: 380px;
+    margin: 0 auto 1.5rem;
+    z-index: 1;
+}
+
+.tl-business-logo {
+    width: 100%;
+    /* ✅ Fixed height cap — no more 280px on phones */
+    height: clamp(120px, 26vw, 170px);
+    border-radius: 16px;
+    object-fit: cover;
+    border: 3px solid #3b82f6;
+    background: var(--bg-primary, #070a12);
+    display: block;
+    box-shadow:
+        0 0 0 5px rgba(255,255,255,0.03),
+        0 16px 40px rgba(0,0,0,0.45),
+        0 0 30px rgba(59,130,246,0.25);
+    transition: transform 0.3s ease;
+}
+.tl-business-logo:hover { transform: scale(1.02); }
+
+.tl-business-logo-placeholder {
+    width: 100%;
+    height: clamp(120px, 26vw, 170px);
+    border-radius: 16px;
+    border: 3px solid #3b82f6;
+    display: flex; align-items: center; justify-content: center;
+    background: var(--bg-primary, #070a12);
+    font-size: clamp(2.5rem, 8vw, 3.5rem);
+    color: #3b82f6;
+    box-shadow:
+        0 0 0 5px rgba(255,255,255,0.03),
+        0 16px 40px rgba(0,0,0,0.45),
+        0 0 30px rgba(59,130,246,0.25);
+}
+
+.tl-business-logo-wrapper::after {
+    content: '';
+    position: absolute;
+    top: 0; inset-inline: 0;
+    height: 3px;
+    background: linear-gradient(90deg, transparent, #3b82f6, transparent);
+    border-radius: 16px 16px 0 0;
+    opacity: 0.75;
+    pointer-events: none;
+}
+
+/* ============================================================
+   Text
+   ============================================================ */
+.tl-business-name {
+    font-size: clamp(1.35rem, 4vw, 1.75rem);
+    font-weight: 800;
+    color: var(--text-primary, #f5f7fa);
+    margin: 0 0 0.4rem;
+    position: relative;
+    z-index: 1;
+    word-break: break-word;
+}
+
+.tl-business-job {
+    color: #3b82f6;
+    font-size: clamp(0.9rem, 2.3vw, 1rem);
+    font-weight: 600;
+    margin: 0 0 0.3rem;
+    position: relative;
+    z-index: 1;
+    word-break: break-word;
+}
+
+.tl-business-company {
+    color: var(--text-muted, #6b7280);
+    font-size: 0.85rem;
+    margin: 0 0 1.25rem;
+    position: relative;
+    z-index: 1;
+    word-break: break-word;
+}
+
+/* ============================================================
+   Sections (bio, services)
+   ============================================================ */
+.tl-business-section {
+    text-align: start;
+    background: var(--bg-primary, #070a12);
+    border: 1px solid var(--border-light, rgba(255,255,255,0.06));
+    border-radius: 12px;
+    padding: 0.9rem 1rem;
+    margin-bottom: 0.75rem;
+}
+.tl-business-section:hover { border-color: var(--border, rgba(255,255,255,0.15)); }
+
+.tl-business-section-title {
+    display: flex; align-items: center; gap: 0.4rem;
+    color: #3b82f6;
+    font-size: 0.82rem; font-weight: 700;
+    margin-bottom: 0.5rem;
+}
+
+.tl-business-section-content {
+    color: var(--text-primary, #f5f7fa);
+    font-size: 0.9rem;
+    line-height: 1.75;
+    word-break: break-word;
+    overflow-wrap: anywhere;
+}
+
+/* ============================================================
+   Contacts
+   ============================================================ */
+.tl-business-contacts {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.6rem;
+    margin-top: 1rem;
+}
+
+.tl-business-contact {
+    display: inline-flex; align-items: center; justify-content: center;
+    gap: 0.4rem;
+    background: var(--bg-primary, #070a12);
+    border: 1px solid var(--border, rgba(255,255,255,0.1));
+    color: var(--text-primary, #f5f7fa);
+    padding: 0.7rem 0.8rem;
+    border-radius: 12px;
+    text-decoration: none;
+    font-size: 0.85rem; font-weight: 600;
+    min-height: 44px;
+    transition: all 0.2s ease;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.tl-business-contact:hover {
+    border-color: #3b82f6;
+    color: #3b82f6;
+    background: rgba(59,130,246,0.08);
+    transform: translateY(-2px);
+}
+.tl-business-contact i { flex-shrink: 0; font-size: 1rem; }
+.tl-business-contact.tl-business-full { grid-column: 1 / -1; }
+
+.tl-business-google {
+    background: linear-gradient(135deg, #4285f4, #ea4335, #fbbc05, #34a853) !important;
+    background-size: 200% 200% !important;
+    animation: tlBusinessGoogle 3s ease infinite !important;
+    color: #fff !important;
+    border: none !important;
+}
+@keyframes tlBusinessGoogle {
+    0%   { background-position: 0% 50%; }
+    50%  { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+
+/* ============================================================
+   Socials
+   ============================================================ */
+.tl-business-socials {
+    display: flex; justify-content: center; gap: 0.6rem;
+    margin-top: 1.25rem; flex-wrap: wrap;
+}
+
+.tl-business-social {
+    width: 46px; height: 46px;
+    border-radius: 50%;
+    background: var(--bg-primary, #070a12);
+    border: 1px solid var(--border, rgba(255,255,255,0.1));
+    color: var(--text-primary, #f5f7fa);
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: 1.05rem;
+    text-decoration: none;
+    transition: all 0.2s ease;
+}
+.tl-business-social:hover { transform: translateY(-3px); color: #fff; border-color: transparent; }
+.tl-business-instagram:hover { background: linear-gradient(45deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888); }
+.tl-business-facebook:hover  { background: #1877f2; }
+.tl-business-linkedin:hover  { background: #0a66c2; }
+
+/* ============================================================
+   Responsive
+   ============================================================ */
+@media (max-width: 520px) {
+    .tl-business-contacts { grid-template-columns: 1fr; }
+    .tl-business-logo,
+    .tl-business-logo-placeholder {
+        height: clamp(100px, 28vw, 140px);
+        border-radius: 14px;
+    }
+    .tl-business-social { width: 42px; height: 42px; font-size: 1rem; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .tl-business-logo:hover { transform: none; }
+    .tl-business-contact:hover,
+    .tl-business-social:hover { transform: none; }
+    .tl-business-google { animation: none; }
+}
