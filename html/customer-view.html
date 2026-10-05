@@ -13,28 +13,22 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎴</text></svg>">
 
+    <!-- Shared base styles (loading, lightbox, security, music) -->
     <link rel="stylesheet" href="../css/style.css">
     <link rel="stylesheet" href="../css/view.css">
+
+    <!-- Per-type CSS is loaded dynamically by card-router.js -->
 </head>
- 
+
 <body class="view-page">
 
-    <!-- =========================
-         Loading Screen
-    ========================== -->
     <div class="loading-screen" id="loadingScreen">
         <div class="loading-spinner"></div>
         <p class="loading-text">جاري تحميل الذكرى...</p>
     </div>
 
-    <!-- =========================
-         Main Container
-    ========================== -->
     <main class="view-container" id="viewContainer" style="display:none;"></main>
 
-    <!-- =========================
-         Lightbox
-    ========================== -->
     <div class="lightbox" id="lightbox" role="dialog" aria-label="عارض الصور" aria-hidden="true">
         <button class="lightbox-close" id="lightboxClose" aria-label="إغلاق">
             <i class="fa-solid fa-xmark"></i>
@@ -51,16 +45,14 @@
         <div class="lightbox-counter" id="lightboxCounter"></div>
     </div>
 
-    <!-- =========================
-         Music Toggle
-    ========================== -->
     <button class="music-toggle" id="musicToggle" title="تشغيل الموسيقى" aria-label="تشغيل الموسيقى">
         <i class="fa-solid fa-music"></i>
     </button>
 
     <audio id="bgMusic" loop preload="none"></audio>
 
-    <script type="module" src="../js/customer-view.js"></script>
+    <!-- ✅ Router replaces customer-view.js -->
+    <script type="module" src="../js/card-router.js"></script>
 
 </body>
 </html>
