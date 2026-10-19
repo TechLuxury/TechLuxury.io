@@ -1,0 +1,136 @@
+/* css/restaurant-owner.css */
+:root {
+    --bg-color: #090d16;
+    --panel-bg: #131c2e;
+    --input-bg: #0d1424;
+    --border-color: #2a3b5c;
+    --primary: #3b82f6;
+    --success: #22c55e;
+    --danger: #ef4444;
+    --text-main: #ffffff;
+    --text-muted: #94a3b8;
+}
+
+* { box-sizing: border-box; }
+
+body {
+    background-color: var(--bg-color);
+    color: var(--text-main);
+    font-family: 'Tajawal', sans-serif;
+    margin: 0;
+    padding: 20px;
+}
+
+.owner-container {
+    max-width: 1100px;
+    margin: 0 auto;
+}
+
+h1 {
+    text-align: center;
+    margin-bottom: 40px;
+    font-size: 32px;
+    border-bottom: 2px solid var(--border-color);
+    padding-bottom: 20px;
+}
+
+.dashboard-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 25px;
+}
+
+.box {
+    background: var(--panel-bg);
+    padding: 25px;
+    border-radius: 16px;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.4);
+    border: 1px solid #1f2b43;
+}
+
+.box h3 {
+    margin-top: 0;
+    margin-bottom: 20px;
+    font-size: 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.note {
+    font-size: 13px;
+    color: var(--text-muted);
+    margin-bottom: 15px;
+    line-height: 1.5;
+}
+
+.input-group {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 15px;
+    flex-direction: column;
+}
+
+input {
+    padding: 14px;
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
+    background: var(--input-bg);
+    color: var(--text-main);
+    font-family: inherit;
+    font-size: 15px;
+    width: 100%;
+    transition: border 0.2s;
+}
+
+input:focus { outline: none; border-color: var(--primary); }
+
+button {
+    padding: 14px 20px;
+    background: var(--success);
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 700;
+    font-family: inherit;
+    font-size: 15px;
+    transition: opacity 0.2s;
+}
+
+button:hover { opacity: 0.9; }
+button.danger { background: var(--danger); padding: 8px 16px; font-size: 13px; }
+
+.staff-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.staff-list li {
+    background: var(--input-bg);
+    padding: 15px;
+    margin-bottom: 10px;
+    border-radius: 8px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-right: 3px solid var(--primary);
+}
+
+.staff-info { display: flex; flex-direction: column; gap: 4px; }
+.staff-name { font-weight: 700; font-size: 16px; }
+.staff-uid { font-size: 12px; color: var(--text-muted); font-family: monospace; }
+
+/* شاشات الحاسوب والتابلت */
+@media (min-width: 768px) {
+    .input-group { flex-direction: row; }
+    .input-group input { flex: 1; }
+    .input-group button { width: auto; white-space: nowrap; }
+}
+
+@media (min-width: 1024px) {
+    .dashboard-grid {
+        grid-template-columns: 1fr 1fr; /* تقسيم الشاشة لنصفين */
+    }
+}
