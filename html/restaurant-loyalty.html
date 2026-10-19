@@ -5,25 +5,18 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>بطاقة الولاء | Tech Luxury</title>
     <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700&display=swap" rel="stylesheet">
-    <style>
-        body { background: #090d16; color: #fff; font-family: 'Tajawal', sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
-        .loyalty-card { background: linear-gradient(135deg, #131c2e, #1e293b); padding: 40px; border-radius: 20px; text-align: center; box-shadow: 0 10px 40px rgba(0,0,0,0.6); width: 90%; max-width: 400px; border: 1px solid #3b82f6; }
-        .points-circle { width: 150px; height: 150px; border-radius: 50%; background: #0d1424; border: 5px solid #fbbf24; display: flex; flex-direction: column; justify-content: center; align-items: center; margin: 20px auto; }
-        .points-val { font-size: 40px; font-weight: bold; color: #fbbf24; }
-        .points-label { font-size: 14px; color: #94a3b8; }
-        input { padding: 12px; width: 80%; border-radius: 8px; border: 1px solid #2a3b5c; background: #0d1424; color: #fff; text-align: center; margin-bottom: 15px; }
-        button { padding: 12px 20px; background: #3b82f6; color: #fff; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; width: 80%; }
-    </style>
+    <!-- ربط ملف الـ CSS الخارجي -->
+    <link rel="stylesheet" href="../css/restaurant-loyalty.css">
 </head>
 <body>
     <div class="loyalty-card">
         <h2>برنامج الولاء</h2>
-        <p style="color: #94a3b8;">أدخل رقم هاتفك لعرض نقاطك</p>
+        <p class="subtitle">أدخل رقم هاتفك لعرض نقاطك ومكافآتك</p>
         
         <input type="tel" id="phoneInput" placeholder="07XXXXXXXX">
         <button id="btnShow">عرض النقاط</button>
         
-        <div id="pointsDisplay" style="display:none; margin-top:20px;">
+        <div class="points-display" id="pointsDisplay">
             <div class="points-circle">
                 <span class="points-val" id="pointsVal">0</span>
                 <span class="points-label">نقطة</span>
