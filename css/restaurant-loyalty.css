@@ -1,0 +1,127 @@
+/* css/restaurant-loyalty.css */
+:root {
+    --bg-color: #090d16;
+    --card-bg: linear-gradient(135deg, #131c2e, #1e293b);
+    --primary: #3b82f6;
+    --warning: #fbbf24;
+    --text-main: #ffffff;
+    --text-muted: #94a3b8;
+    --border-color: #2a3b5c;
+}
+
+* { box-sizing: border-box; }
+
+body {
+    background-color: var(--bg-color);
+    color: var(--text-main);
+    font-family: 'Tajawal', sans-serif;
+    margin: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    padding: 20px;
+}
+
+.loyalty-card {
+    background: var(--card-bg);
+    padding: 40px 30px;
+    border-radius: 24px;
+    text-align: center;
+    box-shadow: 0 15px 40px rgba(0,0,0,0.6);
+    width: 100%;
+    max-width: 450px;
+    border: 1px solid var(--primary);
+    position: relative;
+    overflow: hidden;
+}
+
+/* لمسة جمالية */
+.loyalty-card::before {
+    content: '';
+    position: absolute;
+    top: -50%; left: -50%;
+    width: 200%; height: 200%;
+    background: radial-gradient(circle, rgba(59,130,246,0.1) 0%, transparent 60%);
+    z-index: 0;
+    pointer-events: none;
+}
+
+.loyalty-card > * { position: relative; z-index: 1; }
+
+h2 { margin-top: 0; font-size: 28px; }
+
+.subtitle { color: var(--text-muted); margin-bottom: 30px; font-size: 15px; }
+
+input {
+    padding: 16px;
+    width: 100%;
+    border-radius: 12px;
+    border: 1px solid var(--border-color);
+    background: #0d1424;
+    color: var(--text-main);
+    text-align: center;
+    font-size: 18px;
+    margin-bottom: 15px;
+    font-family: inherit;
+    transition: border 0.3s;
+}
+
+input:focus { outline: none; border-color: var(--primary); }
+
+button {
+    padding: 16px;
+    background: var(--primary);
+    color: #fff;
+    border: none;
+    border-radius: 12px;
+    font-size: 16px;
+    font-weight: 700;
+    cursor: pointer;
+    width: 100%;
+    font-family: inherit;
+    transition: transform 0.1s, background 0.2s;
+}
+
+button:active { transform: scale(0.98); }
+
+.points-display {
+    display: none;
+    margin-top: 30px;
+    animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.points-circle {
+    width: 180px;
+    height: 180px;
+    border-radius: 50%;
+    background: #0d1424;
+    border: 6px solid var(--warning);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    margin: 0 auto;
+    box-shadow: 0 0 20px rgba(251, 191, 36, 0.2);
+}
+
+.points-val {
+    font-size: 50px;
+    font-weight: 800;
+    color: var(--warning);
+    line-height: 1;
+}
+
+.points-label { font-size: 16px; color: var(--text-muted); margin-top: 5px; }
+
+@keyframes popIn {
+    0% { opacity: 0; transform: scale(0.5); }
+    100% { opacity: 1; transform: scale(1); }
+}
+
+/* شاشات الحاسوب */
+@media (min-width: 768px) {
+    .loyalty-card { max-width: 600px; padding: 50px; }
+    .points-circle { width: 220px; height: 220px; }
+    .points-val { font-size: 64px; }
+}
