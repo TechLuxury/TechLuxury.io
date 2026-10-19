@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>المنيو الإلكتروني | Tech Luxury</title>
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="../css/restaurant-menu.css">
+</head>
+<body>
+    <!-- الهيدر (معلومات المطعم) -->
+    <header class="menu-header" id="menuHeader">
+        <div class="header-content">
+            <div class="logo-placeholder" id="logoPlaceholder"><i class="fa-solid fa-utensils"></i></div>
+            <img src="" alt="Logo" id="restaurantLogo" class="restaurant-logo" style="display:none;">
+            <h1 id="restaurantName">جاري التحميل...</h1>
+            <p id="restaurantDesc" class="restaurant-desc"></p>
+            
+            <div class="header-actions">
+                <button class="btn-loyalty" onclick="openLoyalty()">
+                    <i class="fa-solid fa-star"></i> برنامج الولاء (نقاطي)
+                </button>
+                <button class="btn-call" id="btnCall" style="display:none;">
+                    <i class="fa-solid fa-phone"></i> اتصل بنا
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- شريط التنقل بين الأقسام -->
+    <nav class="categories-nav" id="categoriesNav">
+        <!-- سيتم تعبئته بالجافاسكريبت -->
+    </nav>
+
+    <!-- قسم عرض الأصناف -->
+    <main class="menu-container" id="menuContainer">
+        <div class="loading-spinner">
+            <i class="fa-solid fa-circle-notch fa-spin"></i>
+            <p>جاري تحميل المنيو...</p>
+        </div>
+    </main>
+
+    <!-- الفوتر -->
+    <footer class="menu-footer">
+        <p>صُنع بواسطة <strong>Tech Luxury</strong></p>
+    </footer>
+
+    <script type="module" src="../js/restaurant-menu.js"></script>
+</body>
+</html>
