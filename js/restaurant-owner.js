@@ -34,8 +34,11 @@ async function loadStaff() {
         const data = doc.data();
         list.innerHTML += `
             <li>
-                <span>${data.name || 'بدون اسم'} (${doc.id.substring(0,5)}...)</span>
-                <button style="background:#ef4444; padding:5px 10px;" onclick="removeStaff('${doc.id}')">حذف</button>
+                <div class="staff-info">
+                    <span class="staff-name">${data.name || 'بدون اسم'}</span>
+                    <span class="staff-uid">${doc.id}</span>
+                </div>
+                <button class="danger" onclick="removeStaff('${doc.id}')">حذف</button>
             </li>
         `;
     });
