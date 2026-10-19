@@ -2,32 +2,39 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <title>لوحة المطعم | Tech Luxury</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>لوحة إدارة المطعم | Tech Luxury</title>
     <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700&display=swap" rel="stylesheet">
-    <style>
-        body { background: #090d16; color: #fff; font-family: 'Tajawal', sans-serif; padding: 20px; }
-        .box { background: #131c2e; padding: 20px; border-radius: 10px; margin-bottom: 20px; }
-        input, button { padding: 10px; border-radius: 5px; border: none; margin-bottom: 10px; }
-        input { background: #0d1424; color: #fff; border: 1px solid #2a3b5c; width: 60%; }
-        button { background: #22c55e; color: #fff; cursor: pointer; font-weight: bold; }
-        ul { list-style: none; padding: 0; }
-        li { background: #1e293b; padding: 10px; margin-bottom: 5px; border-radius: 5px; display: flex; justify-content: space-between; }
-    </style>
+    <!-- ربط ملف الـ CSS الخارجي -->
+    <link rel="stylesheet" href="../css/restaurant-owner.css">
 </head>
 <body>
-    <h1>لوحة إدارة المطعم</h1>
+    <div class="owner-container">
+        <h1>لوحة إدارة المطعم</h1>
 
-    <div class="box">
-        <h3>إضافة موظف (كاشير)</h3>
-        <p style="font-size: 12px; color: #94a3b8;">اطلب من الموظف إنشاء حساب في الموقع أولاً، ثم ضع الـ UID الخاص به هنا.</p>
-        <input type="text" id="staffUid" placeholder="UID الموظف (من Firebase)">
-        <input type="text" id="staffName" placeholder="اسم الموظف">
-        <button onclick="addStaff()">إضافة موظف</button>
-    </div>
+        <div class="dashboard-grid">
+            <!-- قسم إضافة الموظفين -->
+            <div class="box">
+                <h3>إضافة موظف (كاشير)</h3>
+                <p class="note">اطلب من الموظف إنشاء حساب في الموقع أولاً، ثم ضع الـ UID الخاص به هنا. يمكنه الحصول عليه من صفحة الملف الشخصي أو من لوحة تحكم Firebase.</p>
+                
+                <div class="input-group">
+                    <input type="text" id="staffUid" placeholder="UID الموظف (مثال: aB3dE...)">
+                </div>
+                <div class="input-group">
+                    <input type="text" id="staffName" placeholder="اسم الموظف (للتوضيح)">
+                    <button onclick="addStaff()">إضافة موظف</button>
+                </div>
+            </div>
 
-    <div class="box">
-        <h3>الموظفين الحاليين</h3>
-        <ul id="staffList">جاري التحميل...</ul>
+            <!-- قسم عرض الموظفين -->
+            <div class="box">
+                <h3>الموظفين الحاليين</h3>
+                <ul class="staff-list" id="staffList">
+                    <li style="justify-content: center; color: var(--text-muted);">جاري التحميل...</li>
+                </ul>
+            </div>
+        </div>
     </div>
 
     <script type="module" src="../js/restaurant-owner.js"></script>
