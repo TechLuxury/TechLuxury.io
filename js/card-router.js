@@ -1,8 +1,8 @@
 // ============================================================
 // 🎯 TechLuxury — Card Router (full fix)
 // - New cards  (cardType) → cards/<type>/<type>.js
+// - Restaurant cards → restaurant-menu.html
 // - Old cards  (no cardType) → import original customer-view.js
-// Zero modifications to customer-view.js are required.
 // ============================================================
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
@@ -18,15 +18,11 @@ const firebaseConfig = {
   measurementId: "G-EZJWPY4Q2Z"
 };
 
-// ✅ Named app so customer-view.js (which inits the DEFAULT app) can coexist
 const probeApp = initializeApp(firebaseConfig, "router-probe");
 const probeDb  = getFirestore(probeApp);
 
 const NEW_TYPES = new Set(["business", "gift", "memory", "pet"]);
 
-// ────────────────────────────────────────────────────────────
-// URL helpers
-// ────────────────────────────────────────────────────────────
 function getCardIdFromURL() {
     const params = new URLSearchParams(window.location.search);
     return params.get("id") || params.get("card") || params.get("c");
@@ -46,9 +42,6 @@ function showFatal(title, message) {
     `;
 }
 
-// ────────────────────────────────────────────────────────────
-// Dynamic CSS loader for the new per-type stylesheets
-// ────────────────────────────────────────────────────────────
 const TYPE_CSS = {
     business: "../cards/business/business.css",
     gift:     "../cards/gift/gift.css",
@@ -70,9 +63,6 @@ async function loadTypeCss(type) {
     });
 }
 
-// ────────────────────────────────────────────────────────────
-// Main
-// ────────────────────────────────────────────────────────────
 async function route() {
     const cardId = getCardIdFromURL();
     if (!cardId) {
@@ -80,7 +70,6 @@ async function route() {
         return;
     }
 
-    // 1) Peek the card using the isolated probe app
     let card = null;
     try {
         const snap = await getDoc(doc(probeDb, "cards", cardId));
@@ -90,7 +79,6 @@ async function route() {
         }
         card = snap.data();
     } catch (err) {
-        // If the probe read fails (rules/auth), fall through to legacy silently
         console.warn("Router probe read failed, falling back to legacy:", err);
         await import("./customer-view.js");
         return;
@@ -101,30 +89,27 @@ async function route() {
         return;
     }
 
-    // 2) Decide route
-    const cardType = (card.cardType || "").toString();
+    // ✅ التحقق من نوع المنيو وتوجيهه للصفحة المستقلة
+    const cardType = (card.type || card.cardType || "").toString();
+    
+    if (cardType === "restaurant-menu") {
+        window.location.replace(`restaurant-menu.html?card=${cardId}`);
+        return;
+    }
+
     const isNew = NEW_TYPES.has(cardType);
 
     if (!isNew) {
-        // ─── LEGACY PATH ───
-        // Hand off to the untouched original viewer.
-        // customer-view.js will init the DEFAULT Firebase app and render.
         console.log(`🎴 Card ${cardId} → LEGACY (customer-view.js)`);
         await import("./customer-view.js");
         return;
     }
 
-    // ─── NEW MODULAR PATH ───
     console.log(`🎴 Card ${cardId} → NEW (${cardType})`);
-
-    // Load shared utilities + bind probe DB
     const shared = await import("./card-shared.js");
     shared.setDb(probeDb);
-
-    // Load per-type CSS
     await loadTypeCss(cardType);
 
-    // Load the module
     let mod;
     try {
         mod = await import(`../cards/${cardType}/${cardType}.js`);
@@ -134,7 +119,6 @@ async function route() {
         return;
     }
 
-    // Protected card → password prompt, then render
     if (card.salt && card.protected) {
         shared.showPasswordPrompt(card, (key) => mod.render(card, cardId, key));
     } else {
