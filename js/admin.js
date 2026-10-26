@@ -44,8 +44,6 @@ onAuthStateChanged(auth, async (user) => {
         return;
     }
 
-    console.log("✅ المستخدم الحالي:", user.email, "UID:", user.uid);
-
     try {
         const adminDocRef = doc(db, "admins", user.uid);
         const adminSnap = await getDoc(adminDocRef);
@@ -58,7 +56,6 @@ onAuthStateChanged(auth, async (user) => {
             return;
         }
 
-        console.log("✅ تم التحقق من صلاحيات الأدمن");
         initializeAdminPanel();
 
     } catch (error) {
@@ -73,12 +70,10 @@ onAuthStateChanged(auth, async (user) => {
 // ============================================================
 function initializeAdminPanel() {
 
-    // ===== متغيرات البحث =====
     let allCards = [];
     let currentSearchTerm = "";
     let currentFilter = "all";
 
-    // ===== دالة توليد رمز كرت عشوائي =====
     function generateCardId(length = 8) {
         const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
         let result = '';
@@ -88,16 +83,9 @@ function initializeAdminPanel() {
         return result;
     }
 
-    // ============================================================
-    // ✅ دالة جلب اسم العميل من Firestore
-    // ============================================================
     async function getCustomerName(uid) {
         if (!uid) return null;
-        
-        // ✅ إذا كان محفوظاً في الـ cache → رجعه فوراً
-        if (customersCache.has(uid)) {
-            return customersCache.get(uid);
-        }
+        if (customersCache.has(uid)) return customersCache.get(uid);
 
         try {
             const userRef = doc(db, "users", uid);
@@ -112,19 +100,14 @@ function initializeAdminPanel() {
                 customersCache.set(uid, customerInfo);
                 return customerInfo;
             }
-
-            // لم يوجد المستخدم
             customersCache.set(uid, null);
             return null;
         } catch (error) {
-            console.error("خطأ في جلب بيانات العميل:", error);
             return null;
         }
     }
 
-    // ============================================================
     // 1️⃣ إنشاء كرت جديد
-    // ============================================================
     const btnCreateCard = document.getElementById("btnCreateCard");
     if (btnCreateCard) {
         btnCreateCard.addEventListener("click", async () => {
@@ -152,12 +135,7 @@ function initializeAdminPanel() {
 
                 alert(`✅ تم إنشاء الكرت بنجاح!\n\nرمز الكرت: ${cardId}`);
             } catch (error) {
-                console.error("خطأ أثناء إنشاء الكرت:", error);
-                if (error.code === "permission-denied") {
-                    alert("❌ ليس لديك صلاحية إنشاء الكروت.");
-                } else {
-                    alert("حدث خطأ: " + error.message);
-                }
+                alert("حدث خطأ: " + error.message);
             } finally {
                 btnCreateCard.disabled = false;
                 btnCreateCard.innerHTML = '<i class="fa-solid fa-plus"></i> إنشاء كرت NFC جديد';
@@ -165,55 +143,39 @@ function initializeAdminPanel() {
         });
     }
 
-    // ============================================================
-    // 2️⃣ الاستماع للكروت وعرضها
-    // ============================================================
+    // 2️⃣ الاستماع للكروت
     const cardsCollection = collection(db, "cards");
-
     onSnapshot(cardsCollection, async (snapshot) => {
         allCards = [];
-
         snapshot.forEach((docSnap) => {
-            const card = docSnap.data();
-            allCards.push({
-                id: docSnap.id,
-                ...card
-            });
+            allCards.push({ id: docSnap.id, ...docSnap.data() });
         });
 
-        // ✅ رتّب الكروت (الأحدث أولاً)
         allCards.sort((a, b) => {
             const dateA = a.createdAt?.toDate?.() || new Date(0);
             const dateB = b.createdAt?.toDate?.() || new Date(0);
             return dateB - dateA;
         });
 
-        // ✅ املأ الـ cache بأسماء العملاء
         const uniqueOwnerIds = [...new Set(allCards.map(c => c.ownerId).filter(Boolean))];
         await Promise.all(uniqueOwnerIds.map(uid => getCustomerName(uid)));
 
-        // ✅ اعرض الكروت
         await renderCardsTable();
         updateStats();
     });
 
-    // ============================================================
-    // 3️⃣ عرض جدول الكروت (مع البحث)
-    // ============================================================
+    // 3️⃣ عرض جدول الكروت
     async function renderCardsTable() {
         const tableBody = document.getElementById("cardsTableBody");
         if (!tableBody) return;
 
-        // ✅ طبّق البحث والفلترة
         let filteredCards = allCards.filter(card => {
-            // فلتر الحالة
             if (currentFilter === "available" && card.status !== "available") return false;
             if (currentFilter === "active" && card.status !== "active") return false;
             if (currentFilter === "disabled" && card.status !== "disabled") return false;
             if (currentFilter === "protected" && !(card.salt && card.protected)) return false;
             if (currentFilter === "public" && (card.salt && card.protected)) return false;
 
-            // فلتر البحث
             if (currentSearchTerm) {
                 const term = currentSearchTerm.toLowerCase();
                 const customerInfo = card.ownerId ? customersCache.get(card.ownerId) : null;
@@ -227,86 +189,55 @@ function initializeAdminPanel() {
 
                 if (!matches) return false;
             }
-
             return true;
         });
 
-        // ✅ عرض عدد النتائج
         const searchInfo = document.getElementById("searchInfo");
         if (searchInfo) {
-            if (currentSearchTerm || currentFilter !== "all") {
-                searchInfo.textContent = `📊 ${filteredCards.length} نتيجة من ${allCards.length} كرت`;
-            } else {
-                searchInfo.textContent = `📊 إجمالي ${allCards.length} كرت`;
-            }
+            searchInfo.textContent = (currentSearchTerm || currentFilter !== "all") 
+                ? `📊 ${filteredCards.length} نتيجة من ${allCards.length} كرت` 
+                : `📊 إجمالي ${allCards.length} كرت`;
         }
 
-        // ✅ إذا لا توجد نتائج
         if (filteredCards.length === 0) {
-            if (allCards.length === 0) {
-                tableBody.innerHTML = `
-                    <tr>
-                        <td colspan="6" class="empty-state">
-                            <i class="fa-solid fa-inbox"></i>
-                            لا يوجد كروت حتى الآن. اضغط زر الإنشاء أعلاه.
-                        </td>
-                    </tr>
-                `;
-            } else {
-                tableBody.innerHTML = `
-                    <tr>
-                        <td colspan="6" class="empty-state">
-                            <i class="fa-solid fa-magnifying-glass"></i>
-                            لا توجد نتائج مطابقة للبحث.
-                        </td>
-                    </tr>
-                `;
-            }
+            tableBody.innerHTML = `<tr><td colspan="6" class="empty-state"><i class="fa-solid fa-inbox"></i> لا توجد نتائج.</td></tr>`;
             return;
         }
 
-        // ✅ ابنِ الجدول
         tableBody.innerHTML = "";
 
         for (const card of filteredCards) {
-            // ✅ جلب اسم العميل
             let customerDisplay = `<span class="no-name">— غير مربوط —</span>`;
-            
             if (card.ownerId) {
                 const customerInfo = await getCustomerName(card.ownerId);
-                const customerName = customerInfo?.name || "بدون اسم";
-                const customerEmail = customerInfo?.email || card.ownerEmail || "";
-
                 customerDisplay = `
-                    <div class="customer-name">${escapeHtml(customerName)}</div>
-                    ${customerEmail ? `<div class="customer-email">${escapeHtml(customerEmail)}</div>` : ""}
+                    <div class="customer-name">${escapeHtml(customerInfo?.name || "بدون اسم")}</div>
+                    ${customerInfo?.email ? `<div class="customer-email">${escapeHtml(customerInfo.email)}</div>` : ""}
                 `;
             }
 
-            // ✅ رابط NFC
+            // ✅ رابط NFC موحد (لا نغيره بناءً على النوع لحماية الشرائح القديمة)
             const nfcUrl = `${window.location.origin}${window.location.pathname.replace(/\/html\/.*$/, "")}/html/customer-view.html?id=${card.cardId || card.id}`;
 
-            // ✅ نوع الكرت
             const typeLabels = {
                 "gift": "🎁 هدية",
                 "memory_book": "📖 كتاب ذكريات",
+                "memory": "📖 كتاب ذكريات",
                 "business_card": "💼 بطاقة عمل",
-                "pet_card": "🐾 بطاقة حيوانات"
+                "business": "💼 بطاقة عمل",
+                "pet_card": "🐾 بطاقة حيوانات",
+                "pet": "🐾 بطاقة حيوانات",
+                "restaurant-menu": "🍽️ منيو مطعم"
             };
             const typeLabel = card.type ? (typeLabels[card.type] || card.type) : "— غير محدد —";
-
-            // ✅ حالة القفل
             const lockStatus = (card.salt && card.protected)
                 ? `<span style="color:#22c55e; font-size:0.8rem;">🔒 محمي</span>`
                 : `<span style="color:#f59e0b; font-size:0.8rem;">🌐 عام</span>`;
 
-            // ✅ تمييز النتائج
-            const isHighlighted = currentSearchTerm &&
-                (card.id.toLowerCase().includes(currentSearchTerm.toLowerCase()));
-            const rowClass = isHighlighted ? "highlighted" : "";
-
+            const isHighlighted = currentSearchTerm && (card.id.toLowerCase().includes(currentSearchTerm.toLowerCase()));
+            
             const row = document.createElement("tr");
-            row.className = rowClass;
+            row.className = isHighlighted ? "highlighted" : "";
             row.innerHTML = `
                 <td><strong>${escapeHtml(card.id)}</strong></td>
                 <td>${customerDisplay}</td>
@@ -324,32 +255,35 @@ function initializeAdminPanel() {
                 <td style="font-size:0.8rem;">${card.createdAt ? new Date(card.createdAt.toDate()).toLocaleDateString('ar-EG') : 'الآن'}</td>
                 <td>
                     <div class="action-btns">
+                        <button class="btn-sm btn-edit" 
+                            data-id="${card.id}" 
+                            data-type="${card.type || ''}" 
+                            data-rname="${escapeHtml(card.restaurantName || '')}" 
+                            data-rlogo="${escapeHtml(card.restaurantLogo || '')}" 
+                            data-rdesc="${escapeHtml(card.restaurantDesc || '')}" 
+                            data-rphone="${escapeHtml(card.restaurantPhone || '')}">
+                            <i class="fa-solid fa-pen"></i> تعديل
+                        </button>
                         <button class="btn-sm btn-copy" data-url="${nfcUrl}">
                             <i class="fa-regular fa-copy"></i> نسخ الرابط
                         </button>
                         <button class="btn-sm btn-reset-type" data-id="${card.id}">
-                            <i class="fa-solid fa-eraser"></i> تصفير الكرت
+                            <i class="fa-solid fa-eraser"></i> تصفير
                         </button>
                     </div>
                 </td>
             `;
-
             tableBody.appendChild(row);
         }
 
-        // ✅ ربط أحداث الأزرار
         bindTableEvents();
     }
 
-    // ============================================================
-    // 4️⃣ ربط أحداث الأزرار في الجدول
-    // ============================================================
+    // 4️⃣ ربط الأحداث
     function bindTableEvents() {
-        // ربط أزرار النسخ
         document.querySelectorAll(".btn-copy").forEach(btn => {
             btn.addEventListener("click", () => {
-                const url = btn.dataset.url;
-                navigator.clipboard.writeText(url).then(() => {
+                navigator.clipboard.writeText(btn.dataset.url).then(() => {
                     const originalHTML = btn.innerHTML;
                     btn.innerHTML = '<i class="fa-solid fa-check"></i> تم النسخ!';
                     setTimeout(() => btn.innerHTML = originalHTML, 1500);
@@ -357,27 +291,25 @@ function initializeAdminPanel() {
             });
         });
 
-        // ربط أزرار التصفير
         document.querySelectorAll(".btn-reset-type").forEach(btn => {
             btn.addEventListener("click", async () => {
-                const cardId = btn.dataset.id;
-                await resetCardType(cardId);
+                await resetCardType(btn.dataset.id);
             });
         });
 
-        // ربط تغيير الحالة
         document.querySelectorAll(".status-select").forEach(select => {
             select.addEventListener("change", async (e) => {
-                const cardId = e.target.getAttribute("data-id");
-                const newStatus = e.target.value;
-                await updateCardStatus(cardId, newStatus);
+                await updateCardStatus(e.target.getAttribute("data-id"), e.target.value);
             });
+        });
+
+        // ✅ ربط زر التعديل الجديد
+        document.querySelectorAll(".btn-edit").forEach(btn => {
+            btn.addEventListener("click", () => openEditModal(btn));
         });
     }
 
-    // ============================================================
-    // 5️⃣ أحداث البحث والفلترة
-    // ============================================================
+    // 5️⃣ البحث والفلترة
     const searchInput = document.getElementById("searchInput");
     if (searchInput) {
         let searchTimeout;
@@ -399,123 +331,124 @@ function initializeAdminPanel() {
         });
     });
 
-    // ============================================================
-    // 6️⃣ تحديث حالة الكرت
-    // ============================================================
+    // 6️⃣ تحديث الحالة
     async function updateCardStatus(cardId, status) {
         try {
-            const cardRef = doc(db, "cards", cardId);
-            await updateDoc(cardRef, {
-                status: status,
-                updatedAt: serverTimestamp()
-            });
-            console.log(`✅ تم تغيير حالة الكرت ${cardId} إلى ${status}`);
+            await updateDoc(doc(db, "cards", cardId), { status, updatedAt: serverTimestamp() });
         } catch (error) {
-            console.error("خطأ في تحديث الحالة:", error);
-            if (error.code === "permission-denied") {
-                alert("❌ ليس لديك صلاحية تعديل حالة الكرت.");
-            } else {
-                alert("فشل تحديث حالة الكرت: " + error.message);
-            }
+            alert("فشل تحديث الحالة: " + error.message);
         }
     }
 
-    // ============================================================
-    // 7️⃣ تصفير نوع الكرت
-    // ============================================================
+    // 7️⃣ تصفير الكرت (تمت إضافة حقول المطعم لمسحها أيضاً)
     async function resetCardType(cardId) {
-        if (!confirm(`⚠️ تحذير!\n\nسيتم حذف كل بيانات الكرت "${cardId}":\n\n• النوع المختار\n• العنوان والرسائل\n• الصور والفيديوهات\n• معلومات البطاقة\n• كلمة المرور\n\nهل أنت متأكد؟`)) return;
-        if (!confirm("⚠️ تأكيد نهائي!\n\nهذا الإجراء لا يمكن التراجع عنه.\n\nهل أنت متأكد 100%؟")) return;
+        if (!confirm(`⚠️ تحذير!\n\nسيتم حذف كل بيانات الكرت "${cardId}"!\n\nهل أنت متأكد؟`)) return;
+        if (!confirm("⚠️ تأكيد نهائي!\n\nهذا الإجراء لا يمكن التراجع عنه.")) return;
 
         try {
-            const cardRef = doc(db, "cards", cardId);
-            await updateDoc(cardRef, {
+            await updateDoc(doc(db, "cards", cardId), {
                 type: null,
                 protected: false,
-                title: "",
-                message: "",
-                images: [],
-                video: "",
-                events: [],
-                name: "",
-                jobTitle: "",
-                company: "",
-                bio: "",
-                services: "",
-                email: "",
-                address: "",
-                phone: [],
-                website: [],
-                instagram: [],
-                facebook: "",
-                linkedin: "",
-                logoUrl: "",
-                logo: "",
-                petName: "",
-                petType: "",
-                petBreed: "",
-                petAge: "",
-                petWeight: "",
-                petColor: "",
-                petNotes: "",
-                petVaccinations: "",
-                petOwnerName: "",
-                petOwnerPhone: "",
-                petAddress: "",
-                petPhoto: "",
-                bgMusicUrl: "",
-                salt: null,
-                encryptionVersion: null,
+                title: "", message: "", images: [], video: "", events: [],
+                name: "", jobTitle: "", company: "", bio: "", services: "",
+                email: "", address: "", phone: [], website: [], instagram: [], facebook: "", linkedin: "", logoUrl: "", logo: "",
+                petName: "", petType: "", petBreed: "", petAge: "", petWeight: "", petColor: "", petNotes: "", petVaccinations: "", petOwnerName: "", petOwnerPhone: "", petAddress: "", petPhoto: "", bgMusicUrl: "",
+                // حقول المطعم
+                restaurantName: "", restaurantLogo: "", restaurantDesc: "", restaurantPhone: "",
+                salt: null, encryptionVersion: null,
                 updatedAt: serverTimestamp()
             });
-
             alert(`✅ تم تصفير الكرت "${cardId}" بنجاح!`);
         } catch (error) {
-            console.error("خطأ في تصفير الكرت:", error);
-            if (error.code === "permission-denied") {
-                alert("❌ ليس لديك صلاحية تعديل هذا الكرت.");
-            } else {
-                alert("فشل تصفير الكرت: " + error.message);
-            }
+            alert("فشل تصفير الكرت: " + error.message);
         }
     }
 
-    // ============================================================
-    // 8️⃣ تحديث الإحصائيات
-    // ============================================================
+    // 8️⃣ الإحصائيات
     function updateStats() {
         let total = allCards.length;
         let available = 0, active = 0, disabled = 0;
-
         allCards.forEach(card => {
             if (card.status === "available") available++;
             else if (card.status === "active") active++;
             else if (card.status === "disabled") disabled++;
         });
 
-        const totalEl = document.getElementById("totalCards");
-        const availableEl = document.getElementById("availableCards");
-        const activeEl = document.getElementById("activeCards");
-        const disabledEl = document.getElementById("disabledCards");
-
-        if (totalEl) totalEl.innerText = total;
-        if (availableEl) availableEl.innerText = available;
-        if (activeEl) activeEl.innerText = active;
-        if (disabledEl) disabledEl.innerText = disabled;
+        if (document.getElementById("totalCards")) document.getElementById("totalCards").innerText = total;
+        if (document.getElementById("availableCards")) document.getElementById("availableCards").innerText = available;
+        if (document.getElementById("activeCards")) document.getElementById("activeCards").innerText = active;
+        if (document.getElementById("disabledCards")) document.getElementById("disabledCards").innerText = disabled;
     }
 
-    // ===== دالة escapeHtml =====
     function escapeHtml(text) {
         if (text === null || text === undefined) return "";
         const div = document.createElement("div");
         div.textContent = String(text);
         return div.innerHTML;
     }
+
+    // ============================================================
+    // 9️⃣ نظام التعديل الآمن (Modal) - إضافات جديدة
+    // ============================================================
+    window.openEditModal = function(btn) {
+        document.getElementById('editCardId').value = btn.dataset.id;
+        document.getElementById('editCardType').value = btn.dataset.type;
+        
+        // تعبئة حقول المطعم
+        document.getElementById('editRestaurantName').value = btn.dataset.rname;
+        document.getElementById('editRestaurantLogo').value = btn.dataset.rlogo;
+        document.getElementById('editRestaurantDesc').value = btn.dataset.rdesc;
+        document.getElementById('editRestaurantPhone').value = btn.dataset.rphone;
+        
+        toggleRestaurantFields(btn.dataset.type);
+        document.getElementById('editCardModal').style.display = 'flex';
+    };
+
+    window.closeEditModal = function() {
+        document.getElementById('editCardModal').style.display = 'none';
+    };
+
+    window.toggleRestaurantFields = function(type) {
+        document.getElementById('restaurantFields').style.display = (type === 'restaurant-menu') ? 'block' : 'none';
+    };
+
+    document.getElementById('editCardType')?.addEventListener('change', (e) => {
+        toggleRestaurantFields(e.target.value);
+    });
+
+    window.saveCardEdit = async function() {
+        const id = document.getElementById('editCardId').value;
+        const type = document.getElementById('editCardType').value;
+        
+        let updateData = {
+            updatedAt: serverTimestamp()
+        };
+
+        // ✅ حماية: لا تمسح النوع إذا كان فارغاً، فقط قم بتحديثه إذا تم اختياره
+        if (type !== "") {
+            updateData.type = type;
+        }
+
+        // ✅ استخدام حقول مخصصة للمطعم لتجنب التعارض
+        if (type === 'restaurant-menu') {
+            updateData.restaurantName = document.getElementById('editRestaurantName').value.trim();
+            updateData.restaurantLogo = document.getElementById('editRestaurantLogo').value.trim();
+            updateData.restaurantDesc = document.getElementById('editRestaurantDesc').value.trim();
+            updateData.restaurantPhone = document.getElementById('editRestaurantPhone').value.trim();
+        }
+
+        try {
+            await updateDoc(doc(db, "cards", id), updateData);
+            alert("✅ تم تحديث الكرت بنجاح");
+            closeEditModal();
+        } catch (e) {
+            console.error(e);
+            alert("حدث خطأ أثناء الحفظ: " + e.message);
+        }
+    };
 }
 
-// ============================================================
-// 🚪 زر تسجيل الخروج (إن وُجد)
-// ============================================================
+// 🚪 زر تسجيل الخروج
 document.getElementById("btnLogout")?.addEventListener("click", async () => {
     await signOut(auth);
     window.location.href = "login.html";
