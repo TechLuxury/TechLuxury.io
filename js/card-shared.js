@@ -17,13 +17,14 @@ export function getDb() { return _db; }
 
 // ===== Card type registry =====
 export const CARD_TYPES = {
-    gift:          { label: "كرت هدية",     icon: "fa-gift",       color: "#ec4899", effect: "hearts" },
-    memory_book:   { label: "كتاب ذكريات",  icon: "fa-book-open",  color: "#e2b714", effect: null },
-    memory:        { label: "كتاب ذكريات",  icon: "fa-book-open",  color: "#e2b714", effect: null },
-    business_card: { label: "بطاقة عمل",    icon: "fa-id-card",    color: "#3b82f6", effect: null },
-    business:      { label: "بطاقة عمل",    icon: "fa-id-card",    color: "#3b82f6", effect: null },
-    pet_card:      { label: "بطاقة حيوانات", icon: "fa-paw",        color: "#22c55e", effect: null },
-    pet:           { label: "بطاقة حيوانات", icon: "fa-paw",        color: "#22c55e", effect: null }
+    gift:               { label: "كرت هدية",       icon: "fa-gift",       color: "#ec4899", effect: "hearts" },
+    memory_book:        { label: "كتاب ذكريات",    icon: "fa-book-open",  color: "#e2b714", effect: null },
+    memory:             { label: "كتاب ذكريات",    icon: "fa-book-open",  color: "#e2b714", effect: null },
+    business_card:      { label: "بطاقة عمل",      icon: "fa-id-card",    color: "#3b82f6", effect: null },
+    business:           { label: "بطاقة عمل",      icon: "fa-id-card",    color: "#3b82f6", effect: null },
+    pet_card:           { label: "بطاقة حيوانات",  icon: "fa-paw",        color: "#22c55e", effect: null },
+    pet:                { label: "بطاقة حيوانات",  icon: "fa-paw",        color: "#22c55e", effect: null },
+    "restaurant-menu":  { label: "منيو مطعم",      icon: "fa-utensils",   color: "#f59e0b", effect: null }
 };
 
 // ===== Shared state =====
