@@ -464,6 +464,74 @@
     </div>
 </div>
 
+
+                    <!-- =========================
+                         Type: Restaurant Menu (NEW)
+                    ========================== -->
+                    <div id="restaurantFields" class="hidden">
+                        <div class="hint">
+                            <i class="fa-solid fa-utensils"></i>
+                            منيو إلكتروني متكامل مع نظام نقاط للعملاء.
+                        </div>
+
+                        <div class="form-group">
+                            <label for="restName">
+                                <i class="fa-solid fa-store"></i>
+                                اسم المطعم <span class="required">*</span>
+                            </label>
+                            <input type="text" id="restName" placeholder="مثال: مطعم الشرق">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="restDesc">
+                                <i class="fa-solid fa-align-right"></i>
+                                وصف المطعم
+                            </label>
+                            <textarea id="restDesc" rows="3" placeholder="مثال: أشهى المأكولات الشرقية..."></textarea>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="restPhone">
+                                <i class="fa-solid fa-phone"></i>
+                                رقم هاتف المطعم
+                            </label>
+                            <input type="tel" id="restPhone" placeholder="+962 7XXXXXXXX" dir="ltr">
+                        </div>
+
+                        <h3 class="section-title">
+                            <i class="fa-solid fa-image"></i>
+                            شعار المطعم
+                        </h3>
+
+                        <div class="form-group">
+                            <label>
+                                <i class="fa-solid fa-image"></i>
+                                الشعار الحالي
+                            </label>
+                            <div class="current-images-container" id="restLogoContainer"></div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="restLogo">
+                                <i class="fa-solid fa-upload"></i>
+                                رفع شعار جديد
+                            </label>
+                            <input type="file" id="restLogo" accept="image/*">
+                            <span class="file-status" id="restLogoStatus"></span>
+                        </div>
+
+                        <!-- زر الانتقال للوحة الإدارة -->
+                        <div class="form-group" style="background: rgba(59,130,246,0.1); padding: 15px; border-radius: 8px; border: 1px solid rgba(59,130,246,0.3); margin-top: 20px;">
+                            <p style="margin-top:0; color:#e2e8f0; font-size: 0.9rem; margin-bottom: 10px;">
+                                <i class="fa-solid fa-circle-info" style="color:#3b82f6;"></i> 
+                                بعد حفظ بيانات المطعم، يمكنك إدارة المنيو (الأقسام والأصناف) وإضافة الموظفين من لوحة الإدارة المخصصة.
+                            </p>
+                            <a href="#" id="btnGoToOwner" target="_blank" style="display:block; text-align:center; background:#3b82f6; color:#fff; padding:12px; border-radius:8px; text-decoration:none; font-weight:bold;">
+                                <i class="fa-solid fa-gauge-high"></i> فتح لوحة إدارة المطعم
+                            </a>
+                        </div>
+                    </div>
+                    
                     <!-- =========================
                          Type: Pet Card
                     ========================== -->
