@@ -143,7 +143,8 @@ const CARD_TYPES = [
     { id: "gift", label: "كرت هدية", icon: "fa-gift", desc: "صور + فيديو + موسيقى + رسالة", protected: true },
     { id: "memory_book", label: "كتاب ذكريات", icon: "fa-book-open", desc: "صفحات متعددة لكل مناسبة", protected: true },
     { id: "business_card", label: "بطاقة عمل", icon: "fa-id-card", desc: "بياناتك المهنية ووسائل التواصل", protected: false },
-    { id: "pet_card", label: "بطاقة حيوانات", icon: "fa-paw", desc: "بطاقة لحيوانك الأليف — عامة", protected: false }
+    { id: "pet_card", label: "بطاقة حيوانات", icon: "fa-paw", desc: "بطاقة لحيوانك الأليف — عامة", protected: false },
+    { id: "restaurant-menu", label: "منيو مطعم", icon: "fa-utensils", desc: "منيو إلكتروني متكامل مع نقاط الولاء", protected: false } // ✅ جديد
 ];
 
 // ===== الحالة العامة =====
@@ -689,6 +690,9 @@ async function openEditModal(cardId, card) {
 // 🔄 إعادة تعيين الحالة
 // ============================================================
 function resetFormState() {
+        // متغيرات المطعم
+    let restNewLogo = null;
+    let restCurrentLogo = "";
     giftNewImages = [];
     giftCurrentImages = [];
     giftImagesToDelete = [];
@@ -709,6 +713,7 @@ function resetFormState() {
     eventsState = [];
 
     const ids = [
+        "restName", "restDesc", "restPhone", // حقول المطعم
         "giftTitle", "giftMessage", "bookTitle",
         "bizName", "bizJobTitle", "bizCompany", "bizBio", "bizServices",
         "bizEmail", "bizAddress", "bizGoogleReview",
@@ -722,18 +727,21 @@ function resetFormState() {
         if (el) el.value = "";
     });
 
-    const fileIds = ["giftImages", "giftVideo", "bizLogo", "editBgMusic", "petPhoto"];
+    const fileIds = ["restLogo","giftImages", "giftVideo", "bizLogo", "editBgMusic", "petPhoto"];
     fileIds.forEach(id => {
         const el = document.getElementById(id);
         if (el) el.value = "";
     });
 
-    const statusIds = ["giftImagesStatus", "giftVideoStatus", "bizLogoStatus", "bgMusicStatus", "petPhotoStatus"];
+    const statusIds = ["restLogoStatus","giftImagesStatus", "giftVideoStatus", "bizLogoStatus", "bgMusicStatus", "petPhotoStatus"];
     statusIds.forEach(id => {
         const el = document.getElementById(id);
         if (el) el.textContent = "";
     });
 
+    const restLogoContainerEl = document.getElementById("restLogoContainer");
+    if (restLogoContainerEl) restLogoContainerEl.innerHTML = "";
+    
     const giftCurrentImagesEl = document.getElementById("giftCurrentImages");
     if (giftCurrentImagesEl) giftCurrentImagesEl.innerHTML = "";
 
@@ -921,7 +929,23 @@ async function showCardFields(card) {
         petCurrentPhoto = card.petPhoto || "";
         renderPetPhoto();
     }
+    // ========== منيو مطعم (جديد) ==========
+    if (selectedType.id === "restaurant-menu") {
+        show(document.getElementById("restaurantFields"));
+        
+        document.getElementById("restName").value = card.restaurantName || "";
+        document.getElementById("restDesc").value = card.restaurantDesc || "";
+        document.getElementById("restPhone").value = card.restaurantPhone || "";
+        
+        restCurrentLogo = card.restaurantLogo || "";
+        renderRestLogo();
 
+        // ربط زر الانتقال للوحة المالك
+        const btnGoToOwner = document.getElementById("btnGoToOwner");
+        if (btnGoToOwner) {
+            btnGoToOwner.href = `restaurant-owner.html?card=${cardId}`; // cardId متاح في النطاق الأعلى
+        }
+    }
     if (card.bgMusicUrl) {
         document.getElementById("bgMusicStatus").textContent = "✅ توجد موسيقى محفوظة";
     }
@@ -976,6 +1000,29 @@ function renderBizLogo() {
         if (confirm("حذف الشعار الحالي؟")) {
             bizCurrentLogo = "";
             renderBizLogo();
+        }
+    });
+}
+
+// ===== عرض شعار المطعم =====
+function renderRestLogo() {
+    const container = document.getElementById("restLogoContainer");
+    if (!container) return;
+
+    if (!restCurrentLogo) {
+        container.innerHTML = "<p style='color:#94a3b8;font-size:0.85rem;'>لا يوجد شعار محفوظ.</p>";
+        return;
+    }
+    container.innerHTML = `
+        <div class="image-thumb">
+            <img src="${restCurrentLogo}" style="width:100px;height:100px;">
+            <button type="button" id="removeRestLogo">×</button>
+        </div>
+    `;
+    document.getElementById("removeRestLogo").addEventListener("click", () => {
+        if (confirm("حذف الشعار الحالي؟")) {
+            restCurrentLogo = "";
+            renderRestLogo();
         }
     });
 }
@@ -1168,6 +1215,20 @@ function renderEventImages(index) {
         container.appendChild(wrapper);
     });
 }
+
+document.getElementById("restLogo")?.addEventListener("change", (e) => {
+    try {
+        const file = e.target.files[0];
+        if (file) validateFile(file, "image");
+        restNewLogo = file || null;
+        document.getElementById("restLogoStatus").textContent = file ? "📎 شعار جديد جاهز" : "";
+    } catch (err) {
+        alert("❌ " + err.message);
+        e.target.value = "";
+        restNewLogo = null;
+        document.getElementById("restLogoStatus").textContent = "";
+    }
+});
 
 // ===== إضافة صفحة =====
 document.getElementById("btnAddEvent")?.addEventListener("click", () => {
@@ -1521,7 +1582,29 @@ document.getElementById("editCardForm")?.addEventListener("submit", async (e) =>
             updatePayload.logoUrl = logoUrl;
             updatePayload.logo = "";
         }
+        // ============================================================
+        // 🍽️ منيو مطعم (جديد)
+        // ============================================================
+        if (selectedType.id === "restaurant-menu") {
+            updatePayload.restaurantName = document.getElementById("restName").value.trim();
+            updatePayload.restaurantDesc = document.getElementById("restDesc").value.trim();
+            updatePayload.restaurantPhone = document.getElementById("restPhone").value.trim();
+            
+            // نضع عنوان الكرت ليتوافق مع عرض الكروت في اللوحة
+            updatePayload.title = updatePayload.restaurantName || "مطعم";
 
+            let restLogoUrl = restCurrentLogo;
+            if (restNewLogo) {
+                btnSave.innerHTML = "📤 رفع شعار المطعم...";
+                const compressed = await compressImage(restNewLogo);
+                restLogoUrl = await uploadToCloudinary(compressed, "image", (p) => {
+                    btnSave.innerHTML = `🖼️ رفع الشعار — ${p}%`;
+                });
+            }
+            updatePayload.restaurantLogo = restLogoUrl;
+            updatePayload.restaurantLogo = restLogoUrl; // لتأكيد الحفظ
+        }
+        
         // ============================================================
         // 🐾 بطاقة حيوانات
         // ============================================================
