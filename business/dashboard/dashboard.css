@@ -1,0 +1,61 @@
+/* نفس متغيرات التصميم السابقة */
+:root {
+    --primary: #3b82f6;
+    --bg: #0f172a;
+    --card-bg: #1e293b;
+    --text: #f8fafc;
+    --text-muted: #94a3b8;
+    --border: #334155;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Tajawal', sans-serif; }
+body { background: var(--bg); color: var(--text); }
+
+/* Navbar */
+.navbar { display: flex; justify-content: space-between; align-items: center; padding: 15px 30px; background: var(--card-bg); border-bottom: 1px solid var(--border); }
+.nav-brand { font-size: 1.2rem; font-weight: 700; display: flex; align-items: center; gap: 10px; color: var(--primary); }
+.nav-user { display: flex; align-items: center; gap: 15px; }
+.btn-logout { background: none; border: none; color: #ef4444; font-size: 1.2rem; cursor: pointer; }
+.btn-secondary { color: var(--text); text-decoration: none; background: var(--bg); padding: 8px 15px; border-radius: 6px; border: 1px solid var(--border); }
+
+/* Layout */
+.dashboard-container { display: flex; min-height: calc(100vh - 65px); }
+.sidebar { width: 250px; background: var(--card-bg); border-left: 1px solid var(--border); padding: 20px 0; }
+.sidebar ul { list-style: none; }
+.sidebar li a { display: flex; align-items: center; gap: 10px; padding: 15px 25px; color: var(--text-muted); text-decoration: none; transition: 0.3s; }
+.sidebar li.active a, .sidebar li a:hover { background: rgba(59, 130, 246, 0.1); color: var(--primary); border-right: 3px solid var(--primary); }
+.main-content { flex: 1; padding: 30px; }
+
+/* Content */
+.page-header { margin-bottom: 30px; }
+.page-header h1 { margin-bottom: 5px; }
+.page-header p { color: var(--text-muted); }
+
+/* Stats */
+.stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-bottom: 30px; }
+.stat-card { background: var(--card-bg); padding: 20px; border-radius: 12px; display: flex; align-items: center; gap: 20px; border: 1px solid var(--border); }
+.stat-card i { font-size: 2rem; color: var(--primary); }
+.stat-card h3 { font-size: 0.9rem; color: var(--text-muted); margin-bottom: 5px; }
+.stat-card p { font-size: 1.8rem; font-weight: 700; }
+
+/* Table */
+.table-container { background: var(--card-bg); border-radius: 12px; padding: 20px; border: 1px solid var(--border); overflow-x: auto; }
+.data-table { width: 100%; border-collapse: collapse; text-align: right; }
+.data-table th, .data-table td { padding: 15px; border-bottom: 1px solid var(--border); }
+.data-table th { color: var(--text-muted); font-weight: 500; }
+.badge { padding: 4px 10px; border-radius: 20px; font-size: 0.8rem; }
+.badge.active { background: rgba(34, 197, 94, 0.2); color: #22c55e; }
+.badge.disabled { background: rgba(245, 158, 11, 0.2); color: #f59e0b; }
+.btn-icon { background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 1rem; margin: 0 5px; transition: 0.3s; }
+.btn-icon:hover { color: var(--primary); }
+.btn-primary { background: var(--primary); color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-family: inherit; font-weight: 700; }
+
+/* Modal & Grid */
+.modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); display: flex; align-items: center; justify-content: center; z-index: 1000; }
+.modal-content { background: var(--card-bg); padding: 30px; border-radius: 12px; width: 90%; max-width: 600px; position: relative; border: 1px solid var(--border); }
+.close-modal { position: absolute; top: 15px; left: 20px; font-size: 1.5rem; cursor: pointer; color: var(--text-muted); }
+.card-types-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 20px; }
+.card-type-option { background: var(--bg); border: 2px solid var(--border); padding: 20px; border-radius: 12px; text-align: center; cursor: pointer; transition: 0.3s; }
+.card-type-option:hover { border-color: var(--primary); transform: translateY(-3px); }
+.card-type-option i { font-size: 2.5rem; color: var(--primary); margin-bottom: 15px; }
+.card-type-option h3 { margin-bottom: 10px; }
+.card-type-option p { font-size: 0.85rem; color: var(--text-muted); }
