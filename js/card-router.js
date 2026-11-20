@@ -1,7 +1,6 @@
 // ============================================================
 // 🎯 TechLuxury — Card Router (full fix)
 // - New cards  (cardType) → cards/<type>/<type>.js
-// - Restaurant menu        → restaurant-menu.html
 // - Old cards  (no cardType) → import original customer-view.js
 // Zero modifications to customer-view.js are required.
 // ============================================================
@@ -102,16 +101,8 @@ async function route() {
         return;
     }
 
-    // 2) Decide route (تم الدمج في سطر واحد لتجنب خطأ التكرار)
+    // 2) Decide route
     const cardType = (card.type || card.cardType || "").toString();
-
-    // ✅ إضافة توجيه المنيو (بدون المساس بالكروت القديمة)
-    if (cardType === "restaurant-menu") {
-        // نوجهه لصفحة المنيو، مع تمرير رقم الكرت
-        window.location.replace(`restaurant-menu.html?card=${cardId}`);
-        return;
-    }
-
     const isNew = NEW_TYPES.has(cardType);
 
     if (!isNew) {
