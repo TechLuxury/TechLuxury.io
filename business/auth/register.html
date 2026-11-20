@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>تسجيل مؤسسة جديدة - Tech Luxury Business</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="auth.css">
+</head>
+<body>
+    <div class="auth-container">
+        <div class="auth-box">
+            <div class="auth-header">
+                <i class="fa-solid fa-briefcase"></i>
+                <h2>Tech Luxury Business</h2>
+                <p>تسجيل مؤسسة جديدة</p>
+            </div>
+            <form id="registerForm">
+                <div class="input-group">
+                    <label>اسم المؤسسة</label>
+                    <input type="text" id="orgName" required placeholder="مثال: مطعم الذوق الرفيع">
+                </div>
+                <div class="input-group">
+                    <label>اسم المسؤول</label>
+                    <input type="text" id="managerName" required placeholder="الاسم الكامل">
+                </div>
+                <div class="input-group">
+                    <label>نوع النشاط</label>
+                    <select id="activityType" required>
+                        <option value="restaurant">مطعم</option>
+                        <option value="gym">جيم / نادي رياضي</option>
+                    </select>
+                </div>
+                <div class="input-group">
+                    <label>رقم الهاتف</label>
+                    <input type="tel" id="phone" required placeholder="+966...">
+                </div>
+                <div class="input-group">
+                    <label>البريد الإلكتروني</label>
+                    <input type="email" id="email" required placeholder="email@example.com">
+                </div>
+                <div class="input-group">
+                    <label>كلمة المرور</label>
+                    <input type="password" id="password" required minlength="6" placeholder="6 أحرف على الأقل">
+                </div>
+                <button type="submit" class="btn-primary" id="submitBtn">إنشاء الحساب</button>
+            </form>
+            <div class="auth-footer">
+                <p>لديك حساب بالفعل؟ <a href="login.html">تسجيل الدخول</a></p>
+            </div>
+        </div>
+    </div>
+    <script type="module">
+        import { registerOrganization } from '../core/auth.js';
+
+        document.getElementById('registerForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const btn = document.getElementById('submitBtn');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> جاري الإنشاء...';
+
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const orgData = {
+                name: document.getElementById('orgName').value,
+                managerName: document.getElementById('managerName').value,
+                activityType: document.getElementById('activityType').value,
+                phone: document.getElementById('phone').value
+            };
+
+            try {
+                await registerOrganization(email, password, orgData);
+                alert("✅ تم إنشاء الحساب بنجاح!");
+                window.location.href = "../dashboard/index.html";
+            } catch (error) {
+                console.error(error);
+                alert("❌ خطأ: " + error.message);
+                btn.disabled = false;
+                btn.innerText = 'إنشاء الحساب';
+            }
+        });
+    </script>
+</body>
+</html>
