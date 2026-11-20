@@ -226,8 +226,7 @@ function initializeAdminPanel() {
                 "business_card": "💼 بطاقة عمل",
                 "business": "💼 بطاقة عمل",
                 "pet_card": "🐾 بطاقة حيوانات",
-                "pet": "🐾 بطاقة حيوانات",
-                "restaurant-menu": "🍽️ منيو مطعم"
+                "pet": "🐾 بطاقة حيوانات"
             };
             const typeLabel = card.type ? (typeLabels[card.type] || card.type) : "— غير محدد —";
             const lockStatus = (card.salt && card.protected)
@@ -257,11 +256,7 @@ function initializeAdminPanel() {
                     <div class="action-btns">
                         <button class="btn-sm btn-edit" 
                             data-id="${card.id}" 
-                            data-type="${card.type || ''}" 
-                            data-rname="${escapeHtml(card.restaurantName || '')}" 
-                            data-rlogo="${escapeHtml(card.restaurantLogo || '')}" 
-                            data-rdesc="${escapeHtml(card.restaurantDesc || '')}" 
-                            data-rphone="${escapeHtml(card.restaurantPhone || '')}">
+                            data-type="${card.type || ''}">
                             <i class="fa-solid fa-pen"></i> تعديل
                         </button>
                         <button class="btn-sm btn-copy" data-url="${nfcUrl}">
@@ -303,7 +298,6 @@ function initializeAdminPanel() {
             });
         });
 
-        // ✅ ربط زر التعديل الجديد
         document.querySelectorAll(".btn-edit").forEach(btn => {
             btn.addEventListener("click", () => openEditModal(btn));
         });
@@ -340,7 +334,7 @@ function initializeAdminPanel() {
         }
     }
 
-    // 7️⃣ تصفير الكرت (تمت إضافة حقول المطعم لمسحها أيضاً)
+    // 7️⃣ تصفير الكرت
     async function resetCardType(cardId) {
         if (!confirm(`⚠️ تحذير!\n\nسيتم حذف كل بيانات الكرت "${cardId}"!\n\nهل أنت متأكد؟`)) return;
         if (!confirm("⚠️ تأكيد نهائي!\n\nهذا الإجراء لا يمكن التراجع عنه.")) return;
@@ -353,8 +347,6 @@ function initializeAdminPanel() {
                 name: "", jobTitle: "", company: "", bio: "", services: "",
                 email: "", address: "", phone: [], website: [], instagram: [], facebook: "", linkedin: "", logoUrl: "", logo: "",
                 petName: "", petType: "", petBreed: "", petAge: "", petWeight: "", petColor: "", petNotes: "", petVaccinations: "", petOwnerName: "", petOwnerPhone: "", petAddress: "", petPhoto: "", bgMusicUrl: "",
-                // حقول المطعم
-                restaurantName: "", restaurantLogo: "", restaurantDesc: "", restaurantPhone: "",
                 salt: null, encryptionVersion: null,
                 updatedAt: serverTimestamp()
             });
@@ -388,33 +380,17 @@ function initializeAdminPanel() {
     }
 
     // ============================================================
-    // 9️⃣ نظام التعديل الآمن (Modal) - إضافات جديدة
+    // 9️⃣ نظام التعديل الآمن (Modal)
     // ============================================================
     window.openEditModal = function(btn) {
         document.getElementById('editCardId').value = btn.dataset.id;
         document.getElementById('editCardType').value = btn.dataset.type;
-        
-        // تعبئة حقول المطعم
-        document.getElementById('editRestaurantName').value = btn.dataset.rname;
-        document.getElementById('editRestaurantLogo').value = btn.dataset.rlogo;
-        document.getElementById('editRestaurantDesc').value = btn.dataset.rdesc;
-        document.getElementById('editRestaurantPhone').value = btn.dataset.rphone;
-        
-        toggleRestaurantFields(btn.dataset.type);
         document.getElementById('editCardModal').style.display = 'flex';
     };
 
     window.closeEditModal = function() {
         document.getElementById('editCardModal').style.display = 'none';
     };
-
-    window.toggleRestaurantFields = function(type) {
-        document.getElementById('restaurantFields').style.display = (type === 'restaurant-menu') ? 'block' : 'none';
-    };
-
-    document.getElementById('editCardType')?.addEventListener('change', (e) => {
-        toggleRestaurantFields(e.target.value);
-    });
 
     window.saveCardEdit = async function() {
         const id = document.getElementById('editCardId').value;
@@ -427,14 +403,6 @@ function initializeAdminPanel() {
         // ✅ حماية: لا تمسح النوع إذا كان فارغاً، فقط قم بتحديثه إذا تم اختياره
         if (type !== "") {
             updateData.type = type;
-        }
-
-        // ✅ استخدام حقول مخصصة للمطعم لتجنب التعارض
-        if (type === 'restaurant-menu') {
-            updateData.restaurantName = document.getElementById('editRestaurantName').value.trim();
-            updateData.restaurantLogo = document.getElementById('editRestaurantLogo').value.trim();
-            updateData.restaurantDesc = document.getElementById('editRestaurantDesc').value.trim();
-            updateData.restaurantPhone = document.getElementById('editRestaurantPhone').value.trim();
         }
 
         try {
