@@ -23,8 +23,7 @@ export const CARD_TYPES = {
     business_card:      { label: "بطاقة عمل",      icon: "fa-id-card",    color: "#3b82f6", effect: null },
     business:           { label: "بطاقة عمل",      icon: "fa-id-card",    color: "#3b82f6", effect: null },
     pet_card:           { label: "بطاقة حيوانات",  icon: "fa-paw",        color: "#22c55e", effect: null },
-    pet:                { label: "بطاقة حيوانات",  icon: "fa-paw",        color: "#22c55e", effect: null },
-    "restaurant-menu":  { label: "منيو مطعم",      icon: "fa-utensils",   color: "#f59e0b", effect: null }
+    pet:                { label: "بطاقة حيوانات",  icon: "fa-paw",        color: "#22c55e", effect: null }
 };
 
 // ===== Shared state =====
