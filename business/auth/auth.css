@@ -1,0 +1,24 @@
+:root {
+    --primary: #3b82f6;
+    --bg: #0f172a;
+    --card-bg: #1e293b;
+    --text: #f8fafc;
+    --text-muted: #94a3b8;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Tajawal', sans-serif; }
+body { background: var(--bg); color: var(--text); display: flex; align-items: center; justify-content: center; min-height: 100vh; }
+.auth-container { width: 100%; max-width: 450px; padding: 20px; }
+.auth-box { background: var(--card-bg); padding: 40px 30px; border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); border: 1px solid #334155; }
+.auth-header { text-align: center; margin-bottom: 30px; }
+.auth-header i { font-size: 3rem; color: var(--primary); margin-bottom: 15px; }
+.auth-header h2 { font-size: 1.8rem; margin-bottom: 5px; }
+.auth-header p { color: var(--text-muted); font-size: 0.9rem; }
+.input-group { margin-bottom: 20px; }
+.input-group label { display: block; margin-bottom: 8px; font-size: 0.9rem; color: var(--text-muted); }
+.input-group input, .input-group select { width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #334155; background: #0f172a; color: white; font-size: 1rem; outline: none; transition: 0.3s; }
+.input-group input:focus, .input-group select:focus { border-color: var(--primary); }
+.btn-primary { width: 100%; padding: 12px; background: var(--primary); color: white; border: none; border-radius: 8px; font-size: 1.1rem; font-weight: 700; cursor: pointer; transition: 0.3s; }
+.btn-primary:hover { background: #2563eb; }
+.btn-primary:disabled { opacity: 0.7; cursor: not-allowed; }
+.auth-footer { text-align: center; margin-top: 20px; font-size: 0.9rem; color: var(--text-muted); }
+.auth-footer a { color: var(--primary); text-decoration: none; }
