@@ -21,9 +21,10 @@ onAuthChange(async (user) => {
 
 // الاستماع لقائمة الانتظار
 function listenToQueue() {
-    // نجلب فقط الجلسات التي حالتها pending
+    // ✅ أضفنا الفلترة بواسطة organizationId ليتطابق مع قواعد الأمان
     const q = query(
         collection(db, "pos_sessions"), 
+        where("organizationId", "==", currentOrg.orgId), 
         where("cardId", "==", cardId),
         where("status", "==", "pending")
     );
