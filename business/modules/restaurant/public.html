@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>المنيو الرقمي</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body class="public-body">
+    <div id="loading" class="loading-screen">
+        <i class="fa-solid fa-spinner fa-spin"></i> جاري تحميل المنيو...
+    </div>
+    
+    <div id="errorState" style="display: none; text-align: center; padding: 50px;">
+        <i class="fa-solid fa-circle-exclamation" style="font-size: 3rem; color: #ef4444; margin-bottom: 20px;"></i>
+        <h2>عذراً، هذا المنيو غير متاح حالياً</h2>
+    </div>
+
+    <div id="menuContainer" style="display: none;">
+        <!-- Header & Cover -->
+        <div class="hero-section" id="heroCover">
+            <div class="hero-overlay"></div>
+            <img id="publicLogo" class="public-logo" src="" alt="Logo" style="display:none;">
+        </div>
+
+        <div class="container public-content">
+            <!-- Restaurant Info -->
+            <div class="rest-header">
+                <h1 id="publicName">اسم المطعم</h1>
+                <div class="rating-badge" id="publicRating" style="display:none;">
+                    <i class="fa-solid fa-star" style="color: #fbbf24;"></i> 
+                    <span id="ratingValue">0.0</span> 
+                    <span class="text-muted" style="font-size: 0.9rem;">(<span id="reviewsCount">0</span> تقييم)</span>
+                </div>
+                <p id="publicDesc" class="text-muted" style="margin-top: 10px;"></p>
+                
+                <!-- Action Buttons -->
+                <div class="public-actions">
+                    <a id="publicCall" href="#" class="btn-secondary"><i class="fa-solid fa-phone"></i> اتصال</a>
+                    <a id="publicWhatsapp" href="#" class="btn-secondary"><i class="fa-brands fa-whatsapp"></i> واتساب</a>
+                    <a id="publicMaps" href="#" class="btn-secondary" target="_blank"><i class="fa-solid fa-location-dot"></i> الموقع</a>
+                </div>
+
+                <!-- Loyalty Button -->
+                <div class="loyalty-banner" style="margin-top: 20px;">
+                    <button class="btn-primary" style="width: 100%; padding: 15px; font-size: 1.1rem;" onclick="openLoyaltyModal()">
+                        <i class="fa-solid fa-gift"></i> انضم لبرنامج الولاء واحصل على نقاطك
+                    </button>
+                </div>
+                
+                <p id="publicHours" class="hours-text"></p>
+            </div>
+
+            <!-- Categories Nav -->
+            <div class="cat-nav" id="publicCatsNav"></div>
+
+            <!-- Products -->
+            <div id="publicProductsList"></div>
+        </div>
+    </div>
+
+    <!-- Loyalty Registration Modal -->
+    <div id="loyaltyModal" class="modal" style="display:none; background: rgba(0,0,0,0.6);">
+        <div class="modal-content" style="text-align: center;">
+            <span class="close-modal" onclick="document.getElementById('loyaltyModal').style.display='none'">&times;</span>
+            <i class="fa-solid fa-star" style="font-size: 3rem; color: #fbbf24; margin-bottom: 15px;"></i>
+            <h2>برنامج الولاء</h2>
+            <p class="text-muted" style="margin-bottom: 20px;">أدخل اسمك للانضمام إلى البرنامج. سيقوم الكاشير بإضافة نقاطك عند الدفع.</p>
+            
+            <form id="loyaltyForm">
+                <div class="form-group" style="text-align: right;">
+                    <label>الاسم <span class="text-danger">*</span></label>
+                    <input type="text" id="loyaltyName" required placeholder="مثال: أحمد محمد">
+                </div>
+                <div class="form-group" style="text-align: right;">
+                    <label>رقم الهاتف (اختياري)</label>
+                    <input type="tel" id="loyaltyPhone" placeholder="079xxxxxxxx">
+                </div>
+                <button type="submit" class="btn-primary" id="loyaltySubmitBtn" style="width: 100%; margin-top: 15px;">متابعة</button>
+            </form>
+        </div>
+    </div>
+
+    <script type="module" src="public.js"></script>
+</body>
+</html>
