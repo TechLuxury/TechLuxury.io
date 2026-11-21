@@ -66,8 +66,9 @@ function renderCardTypesModal() {
 }
 
 // إنشاء الكرت (المنطق الأساسي المشترك)
+// ابحث عن هذه الدالة في dashboard-cards.js وعدلها:
 window.createCard = async function(typeId) {
-    const cardId = Math.random().toString(36).substring(2, 10).toUpperCase(); // ID عشوائي
+    const cardId = Math.random().toString(36).substring(2, 10).toUpperCase();
     modal.style.display = 'none';
 
     try {
@@ -83,14 +84,13 @@ window.createCard = async function(typeId) {
             createdBy: auth.currentUser.uid
         });
 
-        alert(`✅ تم إنشاء الكرت بنجاح! معرف الكرت: ${cardId}`);
-        
-        // التوجيه لصفحة الإدارة الخاصة بالنوع (سيتم تفعيلها في المراحل القادمة)
+        // ✅ التوجيه لصفحة الإدارة الخاصة بالنوع
         const typeConfig = getEnabledCardTypes().find(t => t.typeId === typeId);
         if (typeConfig && typeConfig.dashboardPath) {
-            // تأجيل التوجيه حتى يتم بناء الموديول، أو توجيهه لصفحة الـ cards مؤقتاً
-            // window.location.href = `${typeConfig.dashboardPath}?id=${cardId}`;
-            alert("سيتم توجيهك لصفحة الإدارة في المرحلة القادمة بعد بناء الموديول.");
+            window.location.href = `../modules/${typeId}/dashboard.html?id=${cardId}`;
+        } else {
+            alert(`✅ تم إنشاء الكرت بنجاح! معرف الكرت: ${cardId}`);
+            window.location.reload();
         }
 
     } catch (error) {
