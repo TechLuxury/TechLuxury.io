@@ -8,78 +8,98 @@
     <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="styles.css">
 </head>
-<body class="public-body">
+<body class="public-body" id="publicBody">
     <div id="loading" class="loading-screen">
-        <i class="fa-solid fa-spinner fa-spin"></i> جاري تحميل المنيو...
+        <i class="fa-solid fa-spinner fa-spin"></i> جاري التحميل...
     </div>
-    
-    <div id="errorState" style="display: none; text-align: center; padding: 50px;">
-        <i class="fa-solid fa-circle-exclamation" style="font-size: 3rem; color: #ef4444; margin-bottom: 20px;"></i>
-        <h2>عذراً، هذا المنيو غير متاح حالياً</h2>
-    </div>
+
+    <!-- زر الولاء العائم (أعلى اليسار) -->
+    <button id="loyaltyFloatBtn" class="loyalty-float-btn" onclick="checkLoyaltyAuth()">
+        <i class="fa-solid fa-gift"></i>
+        <span>نقاطي</span>
+    </button>
 
     <div id="menuContainer" style="display: none;">
-        <!-- Header & Cover -->
+        <!-- Hero Section with Background Customization -->
         <div class="hero-section" id="heroCover">
-            <div class="hero-overlay"></div>
-            <img id="publicLogo" class="public-logo" src="" alt="Logo" style="display:none;">
-        </div>
-
-        <div class="container public-content">
-            <!-- Restaurant Info -->
-            <div class="rest-header">
+            <div class="hero-overlay" id="heroOverlay"></div>
+            <div class="container hero-content">
+                <img id="publicLogo" class="public-logo" src="" alt="Logo" style="display:none;">
                 <h1 id="publicName">اسم المطعم</h1>
                 <div class="rating-badge" id="publicRating" style="display:none;">
                     <i class="fa-solid fa-star" style="color: #fbbf24;"></i> 
                     <span id="ratingValue">0.0</span> 
-                    <span class="text-muted" style="font-size: 0.9rem;">(<span id="reviewsCount">0</span> تقييم)</span>
+                    <span>(<span id="reviewsCount">0</span> تقييم)</span>
                 </div>
-                <p id="publicDesc" class="text-muted" style="margin-top: 10px;"></p>
+                <p id="publicDesc" class="hero-desc"></p>
                 
-                <!-- Action Buttons -->
                 <div class="public-actions">
-                    <a id="publicCall" href="#" class="btn-secondary"><i class="fa-solid fa-phone"></i> اتصال</a>
-                    <a id="publicWhatsapp" href="#" class="btn-secondary"><i class="fa-brands fa-whatsapp"></i> واتساب</a>
-                    <a id="publicMaps" href="#" class="btn-secondary" target="_blank"><i class="fa-solid fa-location-dot"></i> الموقع</a>
+                    <a id="publicCall" href="#" class="btn-glass"><i class="fa-solid fa-phone"></i> اتصال</a>
+                    <a id="publicWhatsapp" href="#" class="btn-glass"><i class="fa-brands fa-whatsapp"></i> واتساب</a>
+                    <a id="publicMaps" href="#" class="btn-glass" target="_blank"><i class="fa-solid fa-location-dot"></i> الموقع</a>
                 </div>
-
-                <!-- Loyalty Button -->
-                <div class="loyalty-banner" style="margin-top: 20px;">
-                    <button class="btn-primary" style="width: 100%; padding: 15px; font-size: 1.1rem;" onclick="openLoyaltyModal()">
-                        <i class="fa-solid fa-gift"></i> انضم لبرنامج الولاء واحصل على نقاطك
-                    </button>
-                </div>
-                
                 <p id="publicHours" class="hours-text"></p>
             </div>
+        </div>
 
+        <div class="container main-content">
             <!-- Categories Nav -->
             <div class="cat-nav" id="publicCatsNav"></div>
-
             <!-- Products -->
             <div id="publicProductsList"></div>
         </div>
     </div>
 
-    <!-- Loyalty Registration Modal -->
-    <div id="loyaltyModal" class="modal" style="display:none; background: rgba(0,0,0,0.6);">
-        <div class="modal-content" style="text-align: center;">
-            <span class="close-modal" onclick="document.getElementById('loyaltyModal').style.display='none'">&times;</span>
-            <i class="fa-solid fa-star" style="font-size: 3rem; color: #fbbf24; margin-bottom: 15px;"></i>
-            <h2>برنامج الولاء</h2>
-            <p class="text-muted" style="margin-bottom: 20px;">أدخل اسمك للانضمام إلى البرنامج. سيقوم الكاشير بإضافة نقاطك عند الدفع.</p>
+    <!-- Modal: تسجيل الدخول / إنشاء حساب -->
+    <div id="authModal" class="modal" style="display:none; background: rgba(0,0,0,0.7);">
+        <div class="modal-content" style="text-align: right;">
+            <span class="close-modal" onclick="document.getElementById('authModal').style.display='none'">&times;</span>
             
-            <form id="loyaltyForm">
-                <div class="form-group" style="text-align: right;">
-                    <label>الاسم <span class="text-danger">*</span></label>
-                    <input type="text" id="loyaltyName" required placeholder="مثال: أحمد محمد">
+            <div id="authStep1">
+                <h2 style="text-align: center; margin-bottom: 20px;">برنامج الولاء</h2>
+                <p style="text-align: center; color: #64748b; margin-bottom: 20px;">سجل الآن للبدء بجمع النقاط</p>
+                
+                <div class="form-group">
+                    <label>رقم الهاتف</label>
+                    <input type="tel" id="authPhone" placeholder="07xxxxxxxx">
                 </div>
-                <div class="form-group" style="text-align: right;">
-                    <label>رقم الهاتف (اختياري)</label>
-                    <input type="tel" id="loyaltyPhone" placeholder="079xxxxxxxx">
+                <div class="form-group">
+                    <label>كلمة المرور</label>
+                    <input type="password" id="authPassword" placeholder="********">
                 </div>
-                <button type="submit" class="btn-primary" id="loyaltySubmitBtn" style="width: 100%; margin-top: 15px;">متابعة</button>
-            </form>
+                <button class="btn-primary" style="width: 100%;" onclick="loginCustomer()">تسجيل الدخول</button>
+                
+                <p style="text-align: center; margin-top: 15px; font-size: 0.9rem;">
+                    ليس لديك حساب؟ <a href="#" onclick="showSignupForm()" style="color: var(--primary);">إنشاء حساب جديد</a>
+                </p>
+            </div>
+
+            <div id="authStep2" style="display: none;">
+                <h2 style="text-align: center; margin-bottom: 20px;">إنشاء حساب جديد</h2>
+                <div class="form-group">
+                    <label>الاسم الكامل</label>
+                    <input type="text" id="signupName" placeholder="الاسم">
+                </div>
+                <div class="form-group">
+                    <label>رقم الهاتف</label>
+                    <input type="tel" id="signupPhone" placeholder="07xxxxxxxx">
+                </div>
+                <div class="form-group">
+                    <label>كلمة المرور</label>
+                    <input type="password" id="signupPassword" placeholder="********">
+                </div>
+                <div class="form-group">
+                    <label>تأكيد كلمة المرور</label>
+                    <input type="password" id="signupConfirmPassword" placeholder="********">
+                </div>
+                <label style="display: flex; gap: 10px; margin-bottom: 15px; font-size: 0.9rem;">
+                    <input type="checkbox" id="signupTerms"> أوافق على الشروط والأحكام
+                </label>
+                <button class="btn-primary" style="width: 100%;" onclick="registerCustomer()">إنشاء الحساب</button>
+                <p style="text-align: center; margin-top: 15px; font-size: 0.9rem;">
+                    لديك حساب؟ <a href="#" onclick="showLoginForm()" style="color: var(--primary);">تسجيل الدخول</a>
+                </p>
+            </div>
         </div>
     </div>
 
