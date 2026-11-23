@@ -1,6 +1,15 @@
 import { auth, db } from '../../core/firebase-config.js';
 import { onAuthChange, getCurrentOrganization } from '../../core/auth.js';
-import { collection, query, where, onSnapshot, doc, updateDoc, addDoc, serverTimestamp, runTransaction } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+import {
+    collection,
+    query,
+    where,
+    getDocs,
+    onSnapshot,
+    doc,
+    serverTimestamp,
+    runTransaction
+} from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
 const urlParams = new URLSearchParams(window.location.search);
 const cardId = urlParams.get('id');
@@ -11,10 +20,20 @@ let selectedCustomerName = null;
 // تحديث رابط العودة
 document.getElementById('backToDash').href = `dashboard.html?id=${cardId}`;
 
+function normalizePhone(phone) {
+    return phone ? String(phone).replace(/\D/g, '') : '';
+}
+
 onAuthChange(async (user) => {
-    if (!user) { window.location.href = "../../auth/login.html"; return; }
+    if (!user) {
+        window.location.href = "../../auth/login.html";
+        return;
+    }
     currentOrg = await getCurrentOrganization(user.uid);
-    if (!currentOrg || !cardId) { alert("بيانات غير صالحة"); return; }
+    if (!currentOrg || !cardId) {
+        alert("بيانات غير صالحة");
+        return;
+    }
 
     listenToQueue();
 });
@@ -23,15 +42,15 @@ onAuthChange(async (user) => {
 function listenToQueue() {
     // ✅ أضفنا الفلترة بواسطة organizationId ليتطابق مع قواعد الأمان
     const q = query(
-        collection(db, "pos_sessions"), 
-        where("organizationId", "==", currentOrg.orgId), 
+        collection(db, "pos_sessions"),
+        where("organizationId", "==", currentOrg.orgId),
         where("cardId", "==", cardId),
         where("status", "==", "pending")
     );
 
     onSnapshot(q, (snapshot) => {
         const list = document.getElementById('queueList');
-        
+
         if (snapshot.empty) {
             list.innerHTML = '<p class="text-muted text-center">لا يوجد زبائن في الانتظار حالياً...</p>';
             return;
@@ -40,12 +59,15 @@ function listenToQueue() {
         // ترتيب حسب وقت الإنشاء (الأحدث أو الأقدم)
         const sessions = [];
         snapshot.forEach(doc => sessions.push({ id: doc.id, ...doc.data() }));
-        sessions.sort((a, b) => b.createdAt?.toMillis() - a.createdAt?.toMillis());
+        sessions.sort((a, b) => (b.createdAt?.toMillis() || 0) - (a.createdAt?.toMillis() || 0));
 
         list.innerHTML = sessions.map(session => {
-            const time = session.createdAt ? new Date(session.createdAt.toMillis()).toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' }) : 'الآن';
-            const phoneDisplay = session.customerPhone ? ` - ${session.customerPhone.slice(-4)}***` : '';
-            
+            const time = session.createdAt
+                ? new Date(session.createdAt.toMillis()).toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' })
+                : 'الآن';
+            const cleanPhone = normalizePhone(session.customerPhone);
+            const phoneDisplay = cleanPhone ? ` - ${cleanPhone.slice(-4)}***` : '';
+
             return `
                 <div class="list-item" onclick="openInvoiceModal('${session.id}', '${session.customerName}')" style="cursor: pointer; border-right: 4px solid var(--primary);">
                     <div>
@@ -93,9 +115,8 @@ document.getElementById('invoiceForm').addEventListener('submit', async (e) => {
     const pointsToAdd = Math.floor(amount * 10); // يجب جلبها من إعدادات المطعم لاحقاً
 
     try {
-        // 1. التحقق من الجلسة وجلب بياناتها
         const sessionRef = doc(db, "pos_sessions", selectedSessionId);
-        
+
         await runTransaction(db, async (transaction) => {
             const sessionDoc = await transaction.get(sessionRef);
             if (!sessionDoc.exists() || sessionDoc.data().status !== 'pending') {
@@ -103,27 +124,58 @@ document.getElementById('invoiceForm').addEventListener('submit', async (e) => {
             }
 
             const sessionData = sessionDoc.data();
-            
-            // 2. البحث عن العميل أو إنشاؤه (سنبحث بالهاتف أو الاسم، هنا سننشئ عميل جديد دائماً للتبسيط)
-            // في النظام المتقدم، يمكن البحث بالهاتف أولاً
-            const customerRef = doc(collection(db, "loyalty_customers"));
-            
-            transaction.set(customerRef, {
-                organizationId: currentOrg.orgId,
-                cardId: cardId,
-                name: sessionData.customerName,
-                phone: sessionData.customerPhone || null,
-                totalPoints: pointsToAdd,
-                createdAt: serverTimestamp(),
-                updatedAt: serverTimestamp()
-            });
+            const cleanPhone = normalizePhone(sessionData.customerPhone) || null;
+
+            // 1. البحث عن الزبون العام في النظام (عن طريق رقم الهاتف إذا وجد)
+            let customerUid = null;
+            if (cleanPhone) {
+                const custQuery = query(collection(db, "customers"), where("phone", "==", cleanPhone));
+                const custSnap = await getDocs(custQuery);
+                if (!custSnap.empty) {
+                    customerUid = custSnap.docs[0].id;
+                }
+            }
+
+            // 2. البحث عن حساب الولاء لهذا المطعم تحديداً
+            let loyaltyCustomerRef;
+            const lq = query(
+                collection(db, "loyalty_customers"),
+                where("organizationId", "==", currentOrg.orgId),
+                where("customerPhone", "==", cleanPhone || "N/A")
+            );
+            const lSnap = await getDocs(lq);
+
+            if (!lSnap.empty) {
+                // العميل موجود، نحدث رصيده
+                loyaltyCustomerRef = doc(db, "loyalty_customers", lSnap.docs[0].id);
+                const currentPoints = lSnap.docs[0].data().totalPoints || 0;
+                transaction.update(loyaltyCustomerRef, {
+                    totalPoints: currentPoints + pointsToAdd,
+                    customerId: lSnap.docs[0].data().customerId || customerUid,
+                    updatedAt: serverTimestamp()
+                });
+            } else {
+                // عميل جديد في هذا المطعم، ننشئ حساب ولاء
+                loyaltyCustomerRef = doc(collection(db, "loyalty_customers"));
+                transaction.set(loyaltyCustomerRef, {
+                    organizationId: currentOrg.orgId,
+                    cardId: cardId,
+                    customerId: customerUid, // قد يكون null إذا لم يسجل في التطبيق
+                    name: sessionData.customerName,
+                    customerPhone: cleanPhone,
+                    totalPoints: pointsToAdd,
+                    createdAt: serverTimestamp(),
+                    updatedAt: serverTimestamp()
+                });
+            }
 
             // 3. تسجيل المعاملة
             const txnRef = doc(collection(db, "loyalty_transactions"));
             transaction.set(txnRef, {
                 organizationId: currentOrg.orgId,
                 cardId: cardId,
-                customerId: customerRef.id,
+                customerId: loyaltyCustomerRef.id,
+                authCustomerId: customerUid,
                 cashierId: auth.currentUser.uid,
                 invoiceAmount: amount,
                 invoiceRef: ref || null,
@@ -132,10 +184,11 @@ document.getElementById('invoiceForm').addEventListener('submit', async (e) => {
                 timestamp: serverTimestamp()
             });
 
-            // 4. تحديث الجلسة لتصبح مكتملة وربطها بالعميل
+            // 4. تحديث الجلسة لتصبح مكتملة
             transaction.update(sessionRef, {
                 status: 'completed',
-                loyaltyCustomerId: customerRef.id,
+                loyaltyCustomerId: loyaltyCustomerRef.id,
+                customerId: customerUid || sessionData.customerId || null,
                 completedAt: serverTimestamp(),
                 completedBy: auth.currentUser.uid
             });
