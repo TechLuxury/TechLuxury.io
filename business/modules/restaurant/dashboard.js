@@ -1,7 +1,25 @@
 import { auth, db } from '../../core/firebase-config.js';
 import { onAuthChange, getCurrentOrganization } from '../../core/auth.js';
-import { doc, getDoc, setDoc, updateDoc, deleteDoc, collection, query, where, onSnapshot, serverTimestamp, addDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+import {
+    doc,
+    getDoc,
+    setDoc,
+    deleteDoc,
+    collection,
+    query,
+    where,
+    onSnapshot,
+    serverTimestamp,
+    addDoc
+} from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+import {
+    getStorage,
+    ref,
+    uploadBytes,
+    getDownloadURL
+} from "https://www.gstatic.com/firebasejs/10.8.0/firebase-storage.js";
 
+const storage = getStorage();
 const urlParams = new URLSearchParams(window.location.search);
 const cardId = urlParams.get('id');
 let currentOrg = null;
@@ -10,13 +28,22 @@ let currentProducts = [];
 
 // تحديث رابط المعاينة
 if (cardId) {
-    document.getElementById('previewLink').href = `public.html?id=${cardId}`;
+    const previewLink = document.getElementById('previewLink');
+    if (previewLink) {
+        previewLink.href = `public.html?id=${cardId}`;
+    }
 }
 
 onAuthChange(async (user) => {
-    if (!user) { window.location.href = "../../auth/login.html"; return; }
+    if (!user) {
+        window.location.href = "../../auth/login.html";
+        return;
+    }
     currentOrg = await getCurrentOrganization(user.uid);
-    if (!currentOrg || !cardId) { alert("بيانات غير صالحة"); return; }
+    if (!currentOrg || !cardId) {
+        alert("بيانات غير صالحة");
+        return;
+    }
 
     loadRestaurantInfo();
     loadCategories();
@@ -30,7 +57,10 @@ document.querySelectorAll('.sidebar li').forEach(item => {
         document.querySelectorAll('.sidebar li').forEach(i => i.classList.remove('active'));
         document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
         item.classList.add('active');
-        document.getElementById(`tab-${item.dataset.tab}`).classList.add('active');
+        const targetTab = document.getElementById(`tab-${item.dataset.tab}`);
+        if (targetTab) {
+            targetTab.classList.add('active');
+        }
     });
 });
 
@@ -51,6 +81,19 @@ async function loadRestaurantInfo() {
         document.getElementById('infoHours').value = data.hours || '';
         document.getElementById('infoRating').value = data.rating || '';
         document.getElementById('infoReviewsCount').value = data.reviewsCount || '';
+
+        // تحميل إعدادات التصميم الحالية إن وجدت
+        const overlayInput = document.getElementById('bgOverlay');
+        const overlayValue = document.getElementById('bgOverlayValue');
+        const colorInput = document.getElementById('bgColor');
+
+        if (overlayInput && typeof data.overlayOpacity === 'number') {
+            overlayInput.value = data.overlayOpacity;
+            if (overlayValue) overlayValue.innerText = data.overlayOpacity;
+        }
+        if (colorInput && data.customBgColor) {
+            colorInput.value = data.customBgColor;
+        }
     }
 }
 
@@ -83,7 +126,7 @@ function loadCategories() {
         currentCategories = [];
         const list = document.getElementById('categoriesList');
         list.innerHTML = '';
-        
+
         snapshot.forEach(doc => {
             const cat = { id: doc.id, ...doc.data() };
             currentCategories.push(cat);
@@ -121,7 +164,7 @@ window.openCategoryModal = () => {
 };
 
 window.deleteCategory = async (id) => {
-    if(confirm("هل أنت متأكد من حذف هذا القسم؟")) {
+    if (confirm("هل أنت متأكد من حذف هذا القسم؟")) {
         await deleteDoc(doc(db, "restaurantCategories", id));
     }
 };
@@ -133,14 +176,14 @@ function loadProducts() {
         currentProducts = [];
         const list = document.getElementById('productsList');
         list.innerHTML = '';
-        
+
         snapshot.forEach(doc => {
             const prod = { id: doc.id, ...doc.data() };
             currentProducts.push(prod);
-            
+
             // البحث عن اسم القسم
             const catName = currentCategories.find(c => c.id === prod.categoryId)?.name || 'غير محدد';
-            
+
             list.innerHTML += `
                 <div class="list-item">
                     <div>
@@ -157,10 +200,10 @@ function loadProducts() {
 }
 
 window.openProductModal = () => {
-    if(currentCategories.length === 0) return alert("الرجاء إضافة قسم واحد على الأقل أولاً.");
-    
+    if (currentCategories.length === 0) return alert("الرجاء إضافة قسم واحد على الأقل أولاً.");
+
     const catOptions = currentCategories.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
-    
+
     document.getElementById('modalBody').innerHTML = `
         <h2>إضافة منتج جديد</h2>
         <form id="prodForm">
@@ -191,11 +234,52 @@ window.openProductModal = () => {
 };
 
 window.deleteProduct = async (id) => {
-    if(confirm("هل أنت متأكد من حذف هذا المنتج؟")) {
+    if (confirm("هل أنت متأكد من حذف هذا المنتج؟")) {
         await deleteDoc(doc(db, "restaurantProducts", id));
     }
 };
 
 window.closeModal = () => {
     document.getElementById('globalModal').style.display = 'none';
+};
+
+// ================= تخصيص التصميم =================
+window.saveDesignSettings = async (event) => {
+    const file = document.getElementById('bgImageFile').files[0];
+    const overlay = parseFloat(document.getElementById('bgOverlay').value);
+    const color = document.getElementById('bgColor').value;
+    const btn = event?.currentTarget || document.querySelector('#tab-design .btn-primary');
+
+    if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> جاري الحفظ...';
+    }
+
+    try {
+        const updateData = {
+            organizationId: currentOrg.orgId,
+            cardId: cardId,
+            overlayOpacity: isNaN(overlay) ? 0.6 : overlay,
+            customBgColor: color,
+            updatedAt: serverTimestamp()
+        };
+
+        if (file) {
+            const storageRef = ref(storage, `restaurant_backgrounds/${cardId}`);
+            await uploadBytes(storageRef, file);
+            const url = await getDownloadURL(storageRef);
+            updateData.customBgImage = url;
+        }
+
+        await setDoc(doc(db, "restaurantProfiles", cardId), updateData, { merge: true });
+        alert("✅ تم حفظ إعدادات التصميم بنجاح");
+    } catch (error) {
+        console.error(error);
+        alert("حدث خطأ أثناء الحفظ: " + error.message);
+    } finally {
+        if (btn) {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fa-solid fa-save"></i> حفظ التصميم';
+        }
+    }
 };
