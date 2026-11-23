@@ -1,49 +1,87 @@
-import { db } from '../../core/firebase-config.js';
-import { doc, getDoc, onSnapshot, query, collection, where, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+import { auth, db } from '../../core/firebase-config.js';
+import { doc, getDoc, collection, query, where, getDocs, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
 const urlParams = new URLSearchParams(window.location.search);
-const sessionId = urlParams.get('session');
-const cardId = urlParams.get('card');
+const cardId = urlParams.get('id');
+let orgId = null;
 
-if (!sessionId || !cardId) {
-    alert("رابط غير صالح");
-    window.location.href = `public.html?id=${cardId}`;
-}
+onAuthStateChanged(auth, async (user) => {
+    if (!user) {
+        window.location.href = `public.html?id=${cardId}`;
+        return;
+    }
 
-let customerId = null;
+    try {
+        // جلب orgId من الكرت
+        const cardSnap = await getDoc(doc(db, "businessCards", cardId));
+        if (!cardSnap.exists()) return;
+        orgId = cardSnap.data().organizationId;
 
-async function init() {
-    // 1. الاستماع لحالة الجلسة
-    const sessionRef = doc(db, "pos_sessions", sessionId);
-    
-    onSnapshot(sessionRef, async (snap) => {
-        if (!snap.exists()) return;
-        const data = snap.data();
+        // جلب اسم الزبون
+        const custSnap = await getDoc(doc(db, "customers", user.uid));
+        if (custSnap.exists()) {
+            document.getElementById('custName').innerText = custSnap.data().name;
+        }
+
+        // جلب اسم المطعم
+        const restSnap = await getDoc(doc(db, "restaurantProfiles", cardId));
+        if (restSnap.exists()) {
+            document.getElementById('restName').innerText = restSnap.data().name;
+        }
+
+        // البحث عن حساب الولاء الخاص بهذا المطعم
+        const lq = query(
+            collection(db, "loyalty_customers"), 
+            where("customerId", "==", user.uid),
+            where("organizationId", "==", orgId)
+        );
         
-        document.getElementById('customerNameDisplay').innerText = data.customerName;
-
-        // إذا قام الكاشير بإكمال العملية وربط حساب العميل
-        if (data.status === 'completed' && data.loyaltyCustomerId) {
-            // تغيير الواجهة
-            document.getElementById('waitingState').style.display = 'none';
-            document.getElementById('successState').style.display = 'block';
+        const lSnap = await getDocs(lq);
+        if (!lSnap.empty) {
+            const loyaltyDoc = lSnap.docs[0];
+            // الاستماع المباشر لتحديث النقاط
+            onSnapshot(doc(db, "loyalty_customers", loyaltyDoc.id), (docSnap) => {
+                document.getElementById('currentPoints').innerText = docSnap.data().totalPoints || 0;
+            });
             
-            // إذا لم نكن قد سجلنا المستمع للرصيد بعد، نقوم بذلك
-            if (customerId !== data.loyaltyCustomerId) {
-                customerId = data.loyaltyCustomerId;
-                listenToPoints(customerId);
-            }
+            loadTransactions(loyaltyDoc.id);
+        } else {
+            // لا يوجد حساب ولاء بعد (لم يقم الكاشير بإضافة نقاط له في هذا المطعم)
+            document.getElementById('currentPoints').innerText = "0";
         }
+
+    } catch (error) {
+        console.error(error);
+    }
+});
+
+async function loadTransactions(loyaltyCustomerId) {
+    const q = query(
+        collection(db, "loyalty_transactions"),
+        where("customerId", "==", loyaltyCustomerId),
+        where("organizationId", "==", orgId)
+    );
+    const snap = await getDocs(q);
+    const list = document.getElementById('transactionsList');
+    
+    if (snap.empty) return;
+    
+    let html = '';
+    snap.forEach(doc => {
+        const txn = doc.data();
+        const date = txn.timestamp ? new Date(txn.timestamp.toMillis()).toLocaleDateString('ar-EG') : '';
+        html += `
+            <div style="display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #e2e8f0;">
+                <div><span style="color: #64748b; font-size: 0.9rem;">${date}</span></div>
+                <div style="font-weight: bold; color: #22c55e;">+${txn.pointsEarned} نقطة</div>
+            </div>
+        `;
     });
+    list.innerHTML = html;
 }
 
-function listenToPoints(custId) {
-    const customerRef = doc(db, "loyalty_customers", custId);
-    onSnapshot(customerRef, (snap) => {
-        if (snap.exists()) {
-            document.getElementById('currentPoints').innerText = snap.data().totalPoints || 0;
-        }
-    });
-}
-
-init();
+window.logoutCustomer = async () => {
+    await signOut(auth);
+    window.location.href = `public.html?id=${cardId}`;
+};
