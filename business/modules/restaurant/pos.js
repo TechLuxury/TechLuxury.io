@@ -96,14 +96,19 @@ window.openInvoiceModal = async (sessionId, customerName, customerUid) => {
     document.getElementById('expectedPoints').innerText = '0';
     document.getElementById('availablePointsDisplay').innerText = '...';
 
-    // جلب الرصيد باستخدام المعرف الثابت
-    if (customerUid) {
+    // ✅ الإصلاح: استخدام getDoc بدلاً من getDocs
+    if (customerUid && currentOrg && currentOrg.orgId) {
         const loyaltyDocId = `${currentOrg.orgId}_${customerUid}`;
-        const loyaltySnap = await getDocs(query(collection(db, "loyalty_customers"), where("__name__", "==", loyaltyDocId)));
-        if (!loyaltySnap.empty) {
-            document.getElementById('availablePointsDisplay').innerText = loyaltySnap.docs[0].data().totalPoints || 0;
-        } else {
-            document.getElementById('availablePointsDisplay').innerText = '0';
+        try {
+            const loyaltySnap = await getDoc(doc(db, "loyalty_customers", loyaltyDocId));
+            if (loyaltySnap.exists()) {
+                document.getElementById('availablePointsDisplay').innerText = loyaltySnap.data().totalPoints || 0;
+            } else {
+                document.getElementById('availablePointsDisplay').innerText = '0';
+            }
+        } catch (error) {
+            console.error("Error fetching points:", error);
+            document.getElementById('availablePointsDisplay').innerText = 'خطأ';
         }
     } else {
         document.getElementById('availablePointsDisplay').innerText = '0';
