@@ -1,9 +1,7 @@
 import { auth, db } from '../../core/firebase-config.js';
 import { getCurrentOrganization } from '../../core/auth.js';
 import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-import {
-    collection, query, where, getDocs, onSnapshot, doc, serverTimestamp, runTransaction
-} from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+import { collection, query, where, getDocs, getDoc, onSnapshot, doc, serverTimestamp, runTransaction } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
 const urlParams = new URLSearchParams(window.location.search);
 const cardId = urlParams.get('id');
