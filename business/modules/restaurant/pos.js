@@ -131,12 +131,30 @@ function listenToQueue() {
     );
 }
 
-window.openInvoiceModal = (sessionId, customerName) => {
+window.openInvoiceModal = async (sessionId, customerName, customerUid) => {
     selectedSessionId = sessionId;
     selectedCustomerName = customerName;
+    
     document.getElementById('selectedCustomerName').innerText = `العميل: ${customerName}`;
     document.getElementById('invoiceForm').reset();
+    document.getElementById('pointsToRedeem').value = "0";
     document.getElementById('expectedPoints').innerText = '0';
+    document.getElementById('availablePointsDisplay').innerText = '...';
+
+    // جلب رصيد النقاط الخاص بالعميل
+    let balance = 0;
+    if (customerUid) {
+        const q = query(collection(db, "loyalty_customers"), 
+            where("organizationId", "==", currentOrg.orgId),
+            where("customerId", "==", customerUid)
+        );
+        const snap = await getDocs(q);
+        if (!snap.empty) {
+            balance = snap.docs[0].data().totalPoints || 0;
+        }
+    }
+    
+    document.getElementById('availablePointsDisplay').innerText = balance;
     document.getElementById('invoiceModal').style.display = 'flex';
 };
 
