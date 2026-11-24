@@ -30,6 +30,14 @@ function normalizePhone(phone) {
     return phone ? String(phone).replace(/\D/g, '') : '';
 }
 
+function toMillisSafe(ts) {
+    if (!ts) return 0;
+    if (typeof ts.toMillis === 'function') return ts.toMillis();
+    if (ts instanceof Date) return ts.getTime();
+    if (typeof ts === 'number') return ts;
+    return 0;
+}
+
 // بوابة المصادقة الوحيدة لاستعادة الجلسة وتعيين currentOrg بأمان
 onAuthStateChanged(auth, async (user) => {
     if (unsubscribeQueue) {
@@ -85,21 +93,29 @@ function listenToQueue() {
             const list = document.getElementById('queueList');
             if (!list) return;
 
-            if (snapshot.empty) {
+            const sessions = [];
+            const now = Date.now();
+
+            snapshot.forEach((docSnap) => {
+                const data = docSnap.data();
+                const expiresAtMs = toMillisSafe(data.expiresAt);
+                // تجاهل الجلسات التي انتهت صلاحيتها
+                if (expiresAtMs > 0 && expiresAtMs < now) return;
+                sessions.push({ id: docSnap.id, ...data });
+            });
+
+            if (sessions.length === 0) {
                 list.innerHTML = '<p class="text-muted text-center">لا يوجد زبائن في الانتظار حالياً...</p>';
                 return;
             }
 
             // ترتيب حسب وقت الإنشاء (الأحدث أولاً)
-            const sessions = [];
-            snapshot.forEach((docSnap) => {
-                sessions.push({ id: docSnap.id, ...docSnap.data() });
-            });
-            sessions.sort((a, b) => (b.createdAt?.toMillis() || 0) - (a.createdAt?.toMillis() || 0));
+            sessions.sort((a, b) => toMillisSafe(b.createdAt) - toMillisSafe(a.createdAt));
 
             list.innerHTML = sessions.map((session) => {
-                const time = session.createdAt
-                    ? new Date(session.createdAt.toMillis()).toLocaleTimeString('ar-EG', {
+                const createdMs = toMillisSafe(session.createdAt);
+                const time = createdMs
+                    ? new Date(createdMs).toLocaleTimeString('ar-EG', {
                         hour: '2-digit',
                         minute: '2-digit'
                     })
@@ -205,7 +221,7 @@ document.getElementById('invoiceForm').addEventListener('submit', async (e) => {
 
             const sessionData = sessionDoc.data();
             const customerUid = sessionData.customerId;
-            
+
             if (!customerUid) {
                 throw new Error("هذا الزبون غير مسجل دخول. لا يمكن إضافة النقاط لحساب غير معروف.");
             }
@@ -218,6 +234,10 @@ document.getElementById('invoiceForm').addEventListener('submit', async (e) => {
             const pointsToRedeem = parseInt(document.getElementById('pointsToRedeem').value) || 0;
             const pointsEarned = Math.floor(amount * 10);
 
+            if (pointsToRedeem < 0) {
+                throw new Error("قيمة النقاط المخصومة لا يمكن أن تكون سالبة.");
+            }
+
             let currentPoints = 0;
 
             if (loyaltyDoc.exists()) {
@@ -228,7 +248,7 @@ document.getElementById('invoiceForm').addEventListener('submit', async (e) => {
                 // تحديث الحساب الموجود
                 transaction.update(loyaltyCustomerRef, {
                     totalPoints: currentPoints - pointsToRedeem + pointsEarned,
-                    name: sessionData.customerName, // تحديث الاسم في حال تغيره
+                    name: sessionData.customerName,
                     updatedAt: serverTimestamp()
                 });
             } else {
@@ -271,7 +291,6 @@ document.getElementById('invoiceForm').addEventListener('submit', async (e) => {
                 completedBy: auth.currentUser.uid
             });
         });
-        
 
         alert("✅ تم تنفيذ العملية بنجاح!");
         closeInvoiceModal();
