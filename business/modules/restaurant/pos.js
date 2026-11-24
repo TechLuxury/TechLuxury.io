@@ -171,7 +171,7 @@ document.getElementById('invoiceForm').addEventListener('submit', async (e) => {
     try {
         const sessionRef = doc(db, "pos_sessions", selectedSessionId);
 
-        await runTransaction(db, async (transaction) => {
+                await runTransaction(db, async (transaction) => {
             const sessionDoc = await transaction.get(sessionRef);
             if (!sessionDoc.exists() || sessionDoc.data().status !== 'pending') {
                 throw new Error("الجلسة منتهية أو تمت معالجتها بالفعل.");
@@ -180,41 +180,54 @@ document.getElementById('invoiceForm').addEventListener('submit', async (e) => {
             const sessionData = sessionDoc.data();
             const cleanPhone = normalizePhone(sessionData.customerPhone) || null;
 
-            // 1. البحث عن الزبون العام في النظام (عن طريق رقم الهاتف إذا وجد)
-            let customerUid = null;
-            if (cleanPhone) {
-                const custQuery = query(collection(db, "customers"), where("phone", "==", cleanPhone));
-                const custSnap = await getDocs(custQuery);
-                if (!custSnap.empty) {
-                    customerUid = custSnap.docs[0].id;
+            // 1. البحث عن حساب الولاء لهذا المطعم تحديداً
+            let loyaltyCustomerRef;
+            let foundLoyaltyDoc = null;
+
+            // أولاً: البحث باستخدام UID الزبون (إذا كان مسجلاً وموجوداً في الجلسة)
+            if (sessionData.customerId) {
+                const lqUid = query(
+                    collection(db, "loyalty_customers"),
+                    where("organizationId", "==", currentOrg.orgId),
+                    where("customerId", "==", sessionData.customerId)
+                );
+                const lSnapUid = await getDocs(lqUid);
+                if (!lSnapUid.empty) {
+                    foundLoyaltyDoc = lSnapUid.docs[0];
                 }
             }
 
-            // 2. البحث عن حساب الولاء لهذا المطعم تحديداً
-            let loyaltyCustomerRef;
-            const lq = query(
-                collection(db, "loyalty_customers"),
-                where("organizationId", "==", currentOrg.orgId),
-                where("customerPhone", "==", cleanPhone || "N/A")
-            );
-            const lSnap = await getDocs(lq);
+            // ثانياً: إذا لم نجده بالـ UID، نبحث برقم الهاتف (كاحتياط)
+            if (!foundLoyaltyDoc && cleanPhone) {
+                const lqPhone = query(
+                    collection(db, "loyalty_customers"),
+                    where("organizationId", "==", currentOrg.orgId),
+                    where("customerPhone", "==", cleanPhone)
+                );
+                const lSnapPhone = await getDocs(lqPhone);
+                if (!lSnapPhone.empty) {
+                    foundLoyaltyDoc = lSnapPhone.docs[0];
+                }
+            }
 
-            if (!lSnap.empty) {
-                // العميل موجود، نحدث رصيده
-                loyaltyCustomerRef = doc(db, "loyalty_customers", lSnap.docs[0].id);
-                const currentPoints = lSnap.docs[0].data().totalPoints || 0;
+            // إذا وجدنا الحساب (سواء بالـ UID أو بالهاتف)
+            if (foundLoyaltyDoc) {
+                loyaltyCustomerRef = doc(db, "loyalty_customers", foundLoyaltyDoc.id);
+                const currentPoints = foundLoyaltyDoc.data().totalPoints || 0;
+                
+                // تحديث النقاط وربط الـ UID إذا لم يكن مربوطاً
                 transaction.update(loyaltyCustomerRef, {
                     totalPoints: currentPoints + pointsToAdd,
-                    customerId: lSnap.docs[0].data().customerId || customerUid,
+                    customerId: foundLoyaltyDoc.data().customerId || sessionData.customerId || null,
                     updatedAt: serverTimestamp()
                 });
             } else {
-                // عميل جديد في هذا المطعم، ننشئ حساب ولاء
+                // عميل جديد في هذا المطعم، ننشئ حساب ولاء جديد
                 loyaltyCustomerRef = doc(collection(db, "loyalty_customers"));
                 transaction.set(loyaltyCustomerRef, {
                     organizationId: currentOrg.orgId,
                     cardId: cardId,
-                    customerId: customerUid, // قد يكون null إذا لم يسجل في التطبيق
+                    customerId: sessionData.customerId || null, // ربطه بالـ UID إذا وجد
                     name: sessionData.customerName,
                     customerPhone: cleanPhone,
                     totalPoints: pointsToAdd,
@@ -223,13 +236,13 @@ document.getElementById('invoiceForm').addEventListener('submit', async (e) => {
                 });
             }
 
-            // 3. تسجيل المعاملة
+            // 2. تسجيل المعاملة في السجل
             const txnRef = doc(collection(db, "loyalty_transactions"));
             transaction.set(txnRef, {
                 organizationId: currentOrg.orgId,
                 cardId: cardId,
-                customerId: loyaltyCustomerRef.id,
-                authCustomerId: customerUid,
+                customerId: loyaltyCustomerRef.id, // معرف حساب الولاء
+                authCustomerId: sessionData.customerId || null, // معرف المصادقة
                 cashierId: auth.currentUser.uid,
                 invoiceAmount: amount,
                 invoiceRef: ref || null,
@@ -238,11 +251,10 @@ document.getElementById('invoiceForm').addEventListener('submit', async (e) => {
                 timestamp: serverTimestamp()
             });
 
-            // 4. تحديث الجلسة لتصبح مكتملة
+            // 3. تحديث الجلسة لتصبح مكتملة (لتختفي من الطابور)
             transaction.update(sessionRef, {
                 status: 'completed',
                 loyaltyCustomerId: loyaltyCustomerRef.id,
-                customerId: customerUid || sessionData.customerId || null,
                 completedAt: serverTimestamp(),
                 completedBy: auth.currentUser.uid
             });
