@@ -1,5 +1,6 @@
 import { auth, db } from '../../core/firebase-config.js';
-import { doc, getDoc, collection, query, where, getDocs, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+// أضفنا addDoc و serverTimestamp
+import { doc, getDoc, collection, query, where, getDocs, onSnapshot, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
 const urlParams = new URLSearchParams(window.location.search);
@@ -18,10 +19,16 @@ onAuthStateChanged(auth, async (user) => {
         if (!cardSnap.exists()) return;
         orgId = cardSnap.data().organizationId;
 
-        // 2. جلب اسم الزبون
+        // 2. جلب اسم وهاتف الزبون
+        let custName = "عميل";
+        let custPhone = null;
+        
         const custSnap = await getDoc(doc(db, "customers", user.uid));
         if (custSnap.exists()) {
-            document.getElementById('custName').innerText = custSnap.data().name || "عميل";
+            const data = custSnap.data();
+            custName = data.name || "عميل";
+            custPhone = data.phone || null;
+            document.getElementById('custName').innerText = custName;
         }
 
         // 3. جلب اسم المطعم
@@ -30,7 +37,19 @@ onAuthStateChanged(auth, async (user) => {
             document.getElementById('restName').innerText = restSnap.data().name || "المطعم";
         }
 
-        // 4. البحث عن حساب الولاء
+        // 4. ✅ إضافة الزبون إلى طابور الكاشير (pos_sessions) ليظهر له
+        await addDoc(collection(db, "pos_sessions"), {
+            organizationId: orgId,
+            cardId: cardId,
+            customerId: user.uid, // ربط الجلسة بحساب الزبون
+            customerName: custName,
+            customerPhone: custPhone,
+            status: 'pending',
+            createdAt: serverTimestamp(),
+            expiresAt: new Date(Date.now() + 15 * 60000) // تنتهي الجلسة بعد 15 دقيقة
+        });
+
+        // 5. البحث عن حساب الولاء لعرض النقاط
         const lq = query(
             collection(db, "loyalty_customers"), 
             where("customerId", "==", user.uid),
@@ -41,13 +60,9 @@ onAuthStateChanged(auth, async (user) => {
 
         if (!lSnap.empty) {
             const loyaltyDoc = lSnap.docs[0];
-            
-            // الاستماع المباشر لتحديث النقاط
             onSnapshot(doc(db, "loyalty_customers", loyaltyDoc.id), (docSnap) => {
                 document.getElementById('currentPoints').innerText = docSnap.data().totalPoints || 0;
             });
-            
-            // جلب سجل المعاملات
             loadTransactions(loyaltyDoc.id);
         } else {
             document.getElementById('currentPoints').innerText = "0";
