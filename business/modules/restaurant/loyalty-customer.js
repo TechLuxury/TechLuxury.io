@@ -1,5 +1,5 @@
 import { auth, db } from '../../core/firebase-config.js';
-import { doc, getDoc, collection, query, where, getDocs, onSnapshot, setDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+import { doc, getDoc, collection, query, where, getDocs, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
 const urlParams = new URLSearchParams(window.location.search);
@@ -17,38 +17,23 @@ onAuthStateChanged(auth, async (user) => {
         if (!cardSnap.exists()) return;
         orgId = cardSnap.data().organizationId;
 
-        let custName = "عميل";
-        let custPhone = null;
+        // جلب بيانات الزبون
         const custSnap = await getDoc(doc(db, "customers", user.uid));
         if (custSnap.exists()) {
-            const data = custSnap.data();
-            custName = data.name || "عميل";
-            custPhone = data.phone || null;
-            document.getElementById('custName').innerText = custName;
+            document.getElementById('custName').innerText = custSnap.data().name || "عميل";
         }
 
+        // جلب اسم المطعم
         const restSnap = await getDoc(doc(db, "restaurantProfiles", cardId));
         if (restSnap.exists()) {
             document.getElementById('restName').innerText = restSnap.data().name || "المطعم";
         }
 
-        // ✅ 1. تحديث الجلسة (الزيارة) بمعرف ثابت، وإعادة تفعيلها إذا كانت مكتملة
-        const sessionRef = doc(db, "pos_sessions", `${cardId}_${user.uid}`);
-        await setDoc(sessionRef, {
-            organizationId: orgId,
-            cardId: cardId,
-            customerId: user.uid,
-            customerName: custName,
-            customerPhone: custPhone || null,
-            status: 'pending', // إعادتها للانتظار في كل مرة يفتح الزبون الصفحة
-            createdAt: serverTimestamp(), // تحديث وقت الزيارة
-            expiresAt: new Date(Date.now() + 30 * 60000) // صلاحية 30 دقيقة
-        }, { merge: true });
-
-        // ✅ 2. القراءة من حساب الولاء بالمعرف الثابت (orgId_userId)
+        // ✅ الاعتماد على المعرف الثابت للولاء
         const loyaltyDocId = `${orgId}_${user.uid}`;
         const loyaltyRef = doc(db, "loyalty_customers", loyaltyDocId);
         
+        // الاستماع اللحظي لرصيد النقاط
         onSnapshot(loyaltyRef, (docSnap) => {
             if (docSnap.exists()) {
                 document.getElementById('currentPoints').innerText = docSnap.data().totalPoints || 0;
@@ -69,7 +54,7 @@ async function loadTransactions(loyaltyCustomerId) {
     try {
         const q = query(
             collection(db, "loyalty_transactions"),
-            where("customerId", "==", loyaltyCustomerId), // البحث بالمعرف الثابت
+            where("customerId", "==", loyaltyCustomerId),
             where("organizationId", "==", orgId)
         );
         const snap = await getDocs(q);
@@ -79,7 +64,6 @@ async function loadTransactions(loyaltyCustomerId) {
             return;
         }
         
-        // ترتيب المعاملات من الأحدث للأقدم
         const txns = [];
         snap.forEach(doc => txns.push(doc.data()));
         txns.sort((a, b) => (b.timestamp?.toMillis() || 0) - (a.timestamp?.toMillis() || 0));
@@ -87,24 +71,12 @@ async function loadTransactions(loyaltyCustomerId) {
         let html = '';
         txns.forEach(txn => {
             const date = txn.timestamp ? new Date(txn.timestamp.toMillis()).toLocaleDateString('ar-EG') : '';
-            const orderId = txn.orderId || txn.invoiceRef || 'طلب';
-            
-            if (txn.pointsEarned > 0) {
-                html += `
-                    <div style="display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #e2e8f0;">
-                        <div><span style="color: #64748b; font-size: 0.9rem;">${date} (${orderId})</span></div>
-                        <div style="font-weight: bold; color: #22c55e;">+${txn.pointsEarned} نقطة</div>
-                    </div>
-                `;
-            }
-            if (txn.pointsRedeemed > 0) {
-                html += `
-                    <div style="display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #e2e8f0;">
-                        <div><span style="color: #64748b; font-size: 0.9rem;">${date} (استبدال)</span></div>
-                        <div style="font-weight: bold; color: #ef4444;">-${txn.pointsRedeemed} نقطة</div>
-                    </div>
-                `;
-            }
+            html += `
+                <div style="display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #e2e8f0;">
+                    <div><span style="color: #64748b; font-size: 0.9rem;">${date}</span></div>
+                    <div style="font-weight: bold; color: #22c55e;">+${txn.pointsEarned} نقطة</div>
+                </div>
+            `;
         });
         list.innerHTML = html;
     } catch (error) {
