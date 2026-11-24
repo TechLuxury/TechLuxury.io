@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>نظام الكاشير - نقاط الولاء</title>
+    <title>نظام الكاشير - إضافة نقاط</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="styles.css">
@@ -18,57 +18,56 @@
     </nav>
 
     <div class="container" style="margin-top: 30px;">
-        <div class="form-grid" style="grid-template-columns: 1fr; gap: 30px;">
+        <div class="form-grid" style="grid-template-columns: 1fr; gap: 20px;">
+            
+            <!-- 1. واجهة البحث -->
+            <div id="searchSection" style="background: var(--card-bg); padding: 20px; border-radius: 12px; border: 1px solid var(--border);">
+                <h2 style="margin-bottom: 20px;"><i class="fa-solid fa-magnifying-glass"></i> البحث عن زبون</h2>
+                
+                <div class="form-group">
+                    <input type="text" id="searchInput" placeholder="ابحث بالاسم أو رقم الهاتف..." autocomplete="off" style="font-size: 1.1rem; padding: 15px;">
+                </div>
 
-            <!-- قائمة الانتظار -->
-            <div style="background: var(--card-bg); padding: 20px; border-radius: 12px; border: 1px solid var(--border);">
-                <h2 style="margin-bottom: 20px;"><i class="fa-solid fa-users"></i> الزبائن في الانتظار</h2>
-                <div id="queueList" style="display: flex; flex-direction: column; gap: 10px;">
-                    <p class="text-muted text-center">لا يوجد زبائن حالياً...</p>
+                <div id="searchResults" style="margin-top: 20px; display: flex; flex-direction: column; gap: 10px;">
+                    <!-- تظهر النتائج هنا -->
+                    <p class="text-muted text-center">ابدأ بكتابة الاسم أو رقم الهاتف للبحث...</p>
                 </div>
             </div>
 
-        </div>
-    </div>
-
-    <!-- Modal لإدخال الفاتورة -->
-    <div id="invoiceModal" class="modal" style="display:none;">
-        <div class="modal-content">
-            <span class="close-modal" onclick="closeInvoiceModal()">&times;</span>
-            <h2>إضافة نقاط للعميل</h2>
-            <h3 id="selectedCustomerName" style="color: var(--primary); margin: 10px 0 20px;"></h3>
-
-            <form id="invoiceForm">
-                <!-- عرض رصيد العميل الحالي -->
-                <div style="background: #e0f2fe; color: #0369a1; padding: 10px; border-radius: 8px; margin-bottom: 15px; font-weight: bold;">
-                    رصيد العميل الحالي: <span id="availablePointsDisplay">0</span> نقطة
+            <!-- 2. واجهة إضافة النقاط (مخفية افتراضياً) -->
+            <div id="addPointsSection" style="display: none; background: var(--card-bg); padding: 20px; border-radius: 12px; border: 2px solid var(--primary);">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                    <h2><i class="fa-solid fa-star"></i> إضافة نقاط</h2>
+                    <button class="btn-secondary" onclick="cancelSelection()">إلغاء</button>
                 </div>
 
-                <div class="form-group">
-                    <label>قيمة الفاتورة (د.أ)</label>
-                    <input type="number" id="invoiceAmount" step="0.01" min="0.1" required placeholder="0.00">
+                <div style="background: #f8fafc; padding: 15px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #e2e8f0;">
+                    <h3 id="selectedCustName" style="color: #0f172a; margin-bottom: 5px;">اسم الزبون</h3>
+                    <p style="color: #64748b; font-size: 0.9rem;" id="selectedCustPhone">*** 000</p>
+                    <p style="color: #f59e0b; font-weight: bold; margin-top: 10px;">الرصيد الحالي: <span id="selectedCustPoints">0</span> نقطة</p>
                 </div>
 
-                <!-- حقل خصم النقاط -->
-                <div class="form-group">
-                    <label>خصم نقاط (اختياري)</label>
-                    <input type="number" id="pointsToRedeem" min="0" value="0" placeholder="0">
-                </div>
+                <form id="addPointsForm">
+                    <div class="form-group">
+                        <label>قيمة الطلب (د.أ)</label>
+                        <input type="number" id="orderAmount" step="0.01" min="0.1" required placeholder="0.00" style="font-size: 1.2rem; padding: 15px;">
+                    </div>
+                    <div class="form-group">
+                        <label>رقم الفاتورة / الطلب (اختياري)</label>
+                        <input type="text" id="orderRef" placeholder="REF-123">
+                    </div>
 
-                <div class="form-group">
-                    <label>رقم الفاتورة (اختياري)</label>
-                    <input type="text" id="invoiceRef" placeholder="REF-123">
-                </div>
+                    <div style="background: rgba(34, 197, 94, 0.1); padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+                        <p style="color: #166534; font-weight: bold; font-size: 1.1rem;">
+                            النقاط المكتسبة: <span id="expectedPoints">0</span> نقطة
+                        </p>
+                        <p style="font-size: 0.8rem; color: #15803d;">(يتم احتساب 10 نقاط لكل 1 د.أ)</p>
+                    </div>
 
-                <div style="background: rgba(245, 158, 11, 0.1); padding: 15px; border-radius: 8px; margin-bottom: 20px;">
-                    <p style="color: var(--primary); font-weight: bold;">
-                        النقاط المكتسبة (صافي): <span id="expectedPoints">0</span> نقطة
-                    </p>
-                    <p style="font-size: 0.8rem; color: var(--text-muted);">(يتم احتساب 10 نقاط لكل 1 د.أ)</p>
-                </div>
+                    <button type="submit" class="btn-primary" id="confirmBtn" style="width: 100%; font-size: 1.2rem; padding: 15px;">تأكيد وإضافة النقاط</button>
+                </form>
+            </div>
 
-                <button type="submit" class="btn-primary" id="confirmBtn" style="width: 100%;">تأكيد العملية</button>
-            </form>
         </div>
     </div>
 
