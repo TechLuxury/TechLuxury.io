@@ -3,6 +3,7 @@ import {
     doc,
     getDoc,
     setDoc,
+    updateDoc,
     collection,
     query,
     where,
@@ -26,7 +27,43 @@ onAuthStateChanged(auth, (user) => {
 });
 
 function normalizePhone(phone) {
-    return phone.replace(/\D/g, '');
+    return phone ? String(phone).replace(/\D/g, '') : '';
+}
+
+async function resolveActiveUser() {
+    if (typeof auth.authStateReady === 'function') {
+        await auth.authStateReady();
+    }
+    return auth.currentUser || currentUser || null;
+}
+
+// ربط أي سجلات ولاء سابقة مرتبطة برقم الهاتف بـ uid الزبون الجديد
+async function linkExistingLoyaltyRecords(phone, uid) {
+    if (!phone || !uid) return;
+    try {
+        const q = query(
+            collection(db, "loyalty_customers"),
+            where("customerPhone", "==", phone)
+        );
+        const snap = await getDocs(q);
+        const updates = [];
+        snap.forEach((docSnap) => {
+            const data = docSnap.data();
+            if (!data.customerId) {
+                updates.push(
+                    updateDoc(doc(db, "loyalty_customers", docSnap.id), {
+                        customerId: uid,
+                        updatedAt: serverTimestamp()
+                    })
+                );
+            }
+        });
+        if (updates.length > 0) {
+            await Promise.all(updates);
+        }
+    } catch (err) {
+        console.warn("Could not auto-link existing loyalty records:", err);
+    }
 }
 
 async function initPublicPage() {
@@ -233,15 +270,29 @@ if (loyaltyForm) {
         }
 
         const name = document.getElementById('loyaltyName')?.value.trim() || '';
-        const phone = document.getElementById('loyaltyPhone')?.value.trim() || '';
+        const rawPhone = document.getElementById('loyaltyPhone')?.value.trim() || '';
+        const cleanPhone = normalizePhone(rawPhone) || null;
 
         try {
+            const activeUser = await resolveActiveUser();
+            let resolvedCustomerId = activeUser ? activeUser.uid : null;
+
+            // إذا لم يكن مسجلاً دخوله حالياً، نحاول مطابقة رقم الهاتف مع customers إن كان متاحاً
+            if (!resolvedCustomerId && cleanPhone) {
+                const custSnap = await getDocs(
+                    query(collection(db, "customers"), where("phone", "==", cleanPhone))
+                );
+                if (!custSnap.empty) {
+                    resolvedCustomerId = custSnap.docs[0].id;
+                }
+            }
+
             const sessionRef = await addDoc(collection(db, "pos_sessions"), {
                 organizationId: orgId,
                 cardId: cardId,
-                customerId: currentUser ? currentUser.uid : null,
+                customerId: resolvedCustomerId,
                 customerName: name,
-                customerPhone: phone || null,
+                customerPhone: cleanPhone,
                 status: 'pending',
                 createdAt: serverTimestamp(),
                 expiresAt: new Date(Date.now() + 15 * 60000)
@@ -261,8 +312,8 @@ if (loyaltyForm) {
 
 // ================= نظام حسابات الزبائن =================
 
-window.checkLoyaltyAuth = () => {
-    const activeUser = auth.currentUser || currentUser;
+window.checkLoyaltyAuth = async () => {
+    const activeUser = await resolveActiveUser();
     if (activeUser) {
         window.location.href = `loyalty.html?id=${cardId}`;
     } else {
@@ -293,7 +344,8 @@ window.loginCustomer = async () => {
     if (!phone || !password) return alert("أدخل البيانات كاملة");
 
     try {
-        await signInWithEmailAndPassword(auth, `${phone}@customer.techluxury`, password);
+        const cred = await signInWithEmailAndPassword(auth, `${phone}@customer.techluxury`, password);
+        await linkExistingLoyaltyRecords(phone, cred.user.uid);
         window.location.href = `loyalty.html?id=${cardId}`;
     } catch (error) {
         console.error("Login error:", error);
@@ -322,6 +374,7 @@ window.registerCustomer = async () => {
             createdAt: serverTimestamp()
         });
 
+        await linkExistingLoyaltyRecords(phone, userCred.user.uid);
         window.location.href = `loyalty.html?id=${cardId}`;
     } catch (error) {
         console.error("Registration error:", error);
