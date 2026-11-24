@@ -1,5 +1,6 @@
 import { auth, db } from '../../core/firebase-config.js';
-import { onAuthChange, getCurrentOrganization } from '../../core/auth.js';
+import { getCurrentOrganization } from '../../core/auth.js';
+import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 import {
     collection,
     query,
@@ -13,34 +14,64 @@ import {
 
 const urlParams = new URLSearchParams(window.location.search);
 const cardId = urlParams.get('id');
+
 let currentOrg = null;
 let selectedSessionId = null;
 let selectedCustomerName = null;
+let unsubscribeQueue = null;
 
 // تحديث رابط العودة
-document.getElementById('backToDash').href = `dashboard.html?id=${cardId}`;
+const backToDashEl = document.getElementById('backToDash');
+if (backToDashEl && cardId) {
+    backToDashEl.href = `dashboard.html?id=${cardId}`;
+}
 
 function normalizePhone(phone) {
     return phone ? String(phone).replace(/\D/g, '') : '';
 }
 
-onAuthChange(async (user) => {
+// بوابة المصادقة الوحيدة لاستعادة الجلسة وتعيين currentOrg بأمان
+onAuthStateChanged(auth, async (user) => {
+    if (unsubscribeQueue) {
+        unsubscribeQueue();
+        unsubscribeQueue = null;
+    }
+
+    currentOrg = null;
+
     if (!user) {
         window.location.href = "../../auth/login.html";
         return;
     }
-    currentOrg = await getCurrentOrganization(user.uid);
-    if (!currentOrg || !cardId) {
-        alert("بيانات غير صالحة");
-        return;
-    }
 
-    listenToQueue();
+    try {
+        // انتظار جاهزية حالة المصادقة بالكامل قبل قراءة بيانات المؤسسة
+        if (typeof auth.authStateReady === 'function') {
+            await auth.authStateReady();
+        }
+
+        const orgData = await getCurrentOrganization(user.uid);
+        if (!orgData || !orgData.orgId || !cardId) {
+            alert("بيانات غير صالحة");
+            return;
+        }
+
+        // تعيين currentOrg حصراً بعد التحقق من user واكتمال جلب بيانات المؤسسة
+        currentOrg = orgData;
+        listenToQueue();
+    } catch (error) {
+        console.error("Auth / Organization initialization error:", error);
+        alert("حدث خطأ أثناء التحقق من صلاحيات الجلسة");
+    }
 });
 
 // الاستماع لقائمة الانتظار
 function listenToQueue() {
-    // ✅ أضفنا الفلترة بواسطة organizationId ليتطابق مع قواعد الأمان
+    if (!currentOrg?.orgId || !cardId) {
+        console.error("Cannot start queue listener: missing organizationId or cardId");
+        return;
+    }
+
     const q = query(
         collection(db, "pos_sessions"),
         where("organizationId", "==", currentOrg.orgId),
@@ -48,39 +79,56 @@ function listenToQueue() {
         where("status", "==", "pending")
     );
 
-    onSnapshot(q, (snapshot) => {
-        const list = document.getElementById('queueList');
+    unsubscribeQueue = onSnapshot(
+        q,
+        (snapshot) => {
+            const list = document.getElementById('queueList');
+            if (!list) return;
 
-        if (snapshot.empty) {
-            list.innerHTML = '<p class="text-muted text-center">لا يوجد زبائن في الانتظار حالياً...</p>';
-            return;
+            if (snapshot.empty) {
+                list.innerHTML = '<p class="text-muted text-center">لا يوجد زبائن في الانتظار حالياً...</p>';
+                return;
+            }
+
+            // ترتيب حسب وقت الإنشاء (الأحدث أولاً)
+            const sessions = [];
+            snapshot.forEach((docSnap) => {
+                sessions.push({ id: docSnap.id, ...docSnap.data() });
+            });
+            sessions.sort((a, b) => (b.createdAt?.toMillis() || 0) - (a.createdAt?.toMillis() || 0));
+
+            list.innerHTML = sessions.map((session) => {
+                const time = session.createdAt
+                    ? new Date(session.createdAt.toMillis()).toLocaleTimeString('ar-EG', {
+                        hour: '2-digit',
+                        minute: '2-digit'
+                    })
+                    : 'الآن';
+                const cleanPhone = normalizePhone(session.customerPhone);
+                const phoneDisplay = cleanPhone ? ` - ${cleanPhone.slice(-4)}***` : '';
+                const safeName = String(session.customerName || 'عميل').replace(/'/g, "\\'");
+
+                return `
+                    <div class="list-item" onclick="openInvoiceModal('${session.id}', '${safeName}')" style="cursor: pointer; border-right: 4px solid var(--primary);">
+                        <div>
+                            <strong style="font-size: 1.1rem;">${session.customerName || 'عميل'}</strong>
+                            <span class="text-muted" style="font-size: 0.8rem;">${phoneDisplay}</span>
+                        </div>
+                        <div style="font-size: 0.8rem; color: var(--text-muted);">
+                            <i class="fa-regular fa-clock"></i> ${time}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        },
+        (error) => {
+            console.error("Error listening to pos_sessions queue:", error);
+            const list = document.getElementById('queueList');
+            if (list) {
+                list.innerHTML = '<p class="text-danger text-center">تعذر تحميل قائمة الانتظار. تحقق من الصلاحيات أو الفهارس في Console.</p>';
+            }
         }
-
-        // ترتيب حسب وقت الإنشاء (الأحدث أو الأقدم)
-        const sessions = [];
-        snapshot.forEach(doc => sessions.push({ id: doc.id, ...doc.data() }));
-        sessions.sort((a, b) => (b.createdAt?.toMillis() || 0) - (a.createdAt?.toMillis() || 0));
-
-        list.innerHTML = sessions.map(session => {
-            const time = session.createdAt
-                ? new Date(session.createdAt.toMillis()).toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' })
-                : 'الآن';
-            const cleanPhone = normalizePhone(session.customerPhone);
-            const phoneDisplay = cleanPhone ? ` - ${cleanPhone.slice(-4)}***` : '';
-
-            return `
-                <div class="list-item" onclick="openInvoiceModal('${session.id}', '${session.customerName}')" style="cursor: pointer; border-right: 4px solid var(--primary);">
-                    <div>
-                        <strong style="font-size: 1.1rem;">${session.customerName}</strong>
-                        <span class="text-muted" style="font-size: 0.8rem;">${phoneDisplay}</span>
-                    </div>
-                    <div style="font-size: 0.8rem; color: var(--text-muted);">
-                        <i class="fa-regular fa-clock"></i> ${time}
-                    </div>
-                </div>
-            `;
-        }).join('');
-    });
+    );
 }
 
 window.openInvoiceModal = (sessionId, customerName) => {
@@ -106,6 +154,12 @@ document.getElementById('invoiceAmount').addEventListener('input', (e) => {
 // تأكيد الفاتورة وإضافة النقاط
 document.getElementById('invoiceForm').addEventListener('submit', async (e) => {
     e.preventDefault();
+
+    if (!currentOrg?.orgId || !auth.currentUser?.uid || !selectedSessionId) {
+        alert("❌ الجلسة غير جاهزة أو غير مصادق عليها.");
+        return;
+    }
+
     const btn = document.getElementById('confirmBtn');
     btn.disabled = true;
     btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> جاري المعالجة...';
