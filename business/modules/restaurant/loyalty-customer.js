@@ -1,15 +1,35 @@
 import { auth, db } from '../../core/firebase-config.js';
-// أضفنا addDoc و serverTimestamp
-import { doc, getDoc, collection, query, where, getDocs, onSnapshot, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+import {
+    doc,
+    getDoc,
+    setDoc,
+    collection,
+    query,
+    where,
+    getDocs,
+    onSnapshot,
+    serverTimestamp
+} from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
 const urlParams = new URLSearchParams(window.location.search);
-const cardId = urlParams.get('id');
+const cardId = urlParams.get('id') || urlParams.get('card');
 let orgId = null;
+let unsubscribeLoyalty = null;
 
 onAuthStateChanged(auth, async (user) => {
+    if (unsubscribeLoyalty) {
+        unsubscribeLoyalty();
+        unsubscribeLoyalty = null;
+    }
+
     if (!user) {
-        window.location.href = `public.html?id=${cardId}`;
+        window.location.href = `public.html?id=${cardId || ''}`;
+        return;
+    }
+
+    if (!cardId) {
+        console.error("Missing cardId in URL");
         return;
     }
 
@@ -22,22 +42,24 @@ onAuthStateChanged(auth, async (user) => {
         // 2. جلب اسم وهاتف الزبون
         let custName = "عميل";
         let custPhone = null;
-        
+
         const custSnap = await getDoc(doc(db, "customers", user.uid));
         if (custSnap.exists()) {
             const data = custSnap.data();
             custName = data.name || "عميل";
             custPhone = data.phone || null;
-            document.getElementById('custName').innerText = custName;
+            const custNameEl = document.getElementById('custName');
+            if (custNameEl) custNameEl.innerText = custName;
         }
 
         // 3. جلب اسم المطعم
         const restSnap = await getDoc(doc(db, "restaurantProfiles", cardId));
         if (restSnap.exists()) {
-            document.getElementById('restName').innerText = restSnap.data().name || "المطعم";
+            const restNameEl = document.getElementById('restName');
+            if (restNameEl) restNameEl.innerText = restSnap.data().name || "المطعم";
         }
 
-                // 4. ✅ إضافة/تحديث الزبون في طابور الكاشير بمعرف ثابت لمنع التكرار
+        // 4. إضافة/تحديث الزبون في طابور الكاشير بمعرف ثابت لمنع التكرار
         const sessionRef = doc(db, "pos_sessions", `${cardId}_${user.uid}`);
         await setDoc(sessionRef, {
             organizationId: orgId,
@@ -48,27 +70,28 @@ onAuthStateChanged(auth, async (user) => {
             status: 'pending',
             createdAt: serverTimestamp(),
             expiresAt: new Date(Date.now() + 15 * 60000)
-        }, { merge: true }); // merge: true لعدم مسح البيانات القديمة إن وجدت
+        }, { merge: true });
 
-        
-        // 5. البحث عن حساب الولاء لعرض النقاط
-        const lq = query(
-            collection(db, "loyalty_customers"), 
-            where("customerId", "==", user.uid),
-            where("organizationId", "==", orgId)
-        );
-        
-        const lSnap = await getDocs(lq);
+        // 5. البحث عن حساب الولاء لعرض النقاط باستخدام المعرف الثابت
+        const loyaltyDocId = `${orgId}_${user.uid}`;
+        const loyaltyRef = doc(db, "loyalty_customers", loyaltyDocId);
+        const loyaltyDoc = await getDoc(loyaltyRef);
 
-        if (!lSnap.empty) {
-            const loyaltyDoc = lSnap.docs[0];
-            onSnapshot(doc(db, "loyalty_customers", loyaltyDoc.id), (docSnap) => {
-                document.getElementById('currentPoints').innerText = docSnap.data().totalPoints || 0;
+        const currentPointsEl = document.getElementById('currentPoints');
+        const transactionsListEl = document.getElementById('transactionsList');
+
+        if (loyaltyDoc.exists()) {
+            unsubscribeLoyalty = onSnapshot(loyaltyRef, (docSnap) => {
+                if (docSnap.exists() && currentPointsEl) {
+                    currentPointsEl.innerText = docSnap.data().totalPoints || 0;
+                }
             });
-            loadTransactions(loyaltyDoc.id);
+            await loadTransactions(loyaltyDocId);
         } else {
-            document.getElementById('currentPoints').innerText = "0";
-            document.getElementById('transactionsList').innerHTML = '<p style="color: #94a3b8; text-align: center;">لا توجد نقاط بعد. اطلب من الكاشير إضافتها!</p>';
+            if (currentPointsEl) currentPointsEl.innerText = "0";
+            if (transactionsListEl) {
+                transactionsListEl.innerHTML = '<p style="color: #94a3b8; text-align: center;">لا توجد نقاط بعد. اطلب من الكاشير إضافتها!</p>';
+            }
         }
 
     } catch (error) {
@@ -78,6 +101,8 @@ onAuthStateChanged(auth, async (user) => {
 
 async function loadTransactions(loyaltyCustomerId) {
     const list = document.getElementById('transactionsList');
+    if (!list) return;
+
     try {
         const q = query(
             collection(db, "loyalty_transactions"),
@@ -85,17 +110,23 @@ async function loadTransactions(loyaltyCustomerId) {
             where("organizationId", "==", orgId)
         );
         const snap = await getDocs(q);
-        
+
         if (snap.empty) {
             list.innerHTML = '<p style="color: #94a3b8; text-align: center;">لا توجد عمليات سابقة</p>';
             return;
         }
-        
-                let html = '';
-        snap.forEach(doc => {
-            const txn = doc.data();
+
+        const txns = [];
+        snap.forEach((docSnap) => {
+            txns.push(docSnap.data());
+        });
+
+        txns.sort((a, b) => (b.timestamp?.toMillis() || 0) - (a.timestamp?.toMillis() || 0));
+
+        let html = '';
+        txns.forEach((txn) => {
             const date = txn.timestamp ? new Date(txn.timestamp.toMillis()).toLocaleDateString('ar-EG') : '';
-            
+
             // عرض النقاط المكتسبة
             if (txn.pointsEarned > 0) {
                 html += `
@@ -105,7 +136,7 @@ async function loadTransactions(loyaltyCustomerId) {
                     </div>
                 `;
             }
-            
+
             // عرض النقاط المخصومة
             if (txn.pointsRedeemed > 0) {
                 html += `
@@ -116,8 +147,8 @@ async function loadTransactions(loyaltyCustomerId) {
                 `;
             }
         });
-        
-        list.innerHTML = html;
+
+        list.innerHTML = html || '<p style="color: #94a3b8; text-align: center;">لا توجد عمليات سابقة</p>';
     } catch (error) {
         console.error("Error loading transactions:", error);
         list.innerHTML = '<p style="color: #ef4444; text-align: center;">تعذر تحميل سجل المعاملات.</p>';
@@ -126,5 +157,5 @@ async function loadTransactions(loyaltyCustomerId) {
 
 window.logoutCustomer = async () => {
     await signOut(auth);
-    window.location.href = `public.html?id=${cardId}`;
+    window.location.href = `public.html?id=${cardId || ''}`;
 };
