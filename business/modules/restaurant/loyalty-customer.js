@@ -37,18 +37,20 @@ onAuthStateChanged(auth, async (user) => {
             document.getElementById('restName').innerText = restSnap.data().name || "المطعم";
         }
 
-        // 4. ✅ إضافة الزبون إلى طابور الكاشير (pos_sessions) ليظهر له
-        await addDoc(collection(db, "pos_sessions"), {
+                // 4. ✅ إضافة/تحديث الزبون في طابور الكاشير بمعرف ثابت لمنع التكرار
+        const sessionRef = doc(db, "pos_sessions", `${cardId}_${user.uid}`);
+        await setDoc(sessionRef, {
             organizationId: orgId,
             cardId: cardId,
-            customerId: user.uid, // ربط الجلسة بحساب الزبون
+            customerId: user.uid,
             customerName: custName,
-            customerPhone: custPhone,
+            customerPhone: custPhone || null,
             status: 'pending',
             createdAt: serverTimestamp(),
-            expiresAt: new Date(Date.now() + 15 * 60000) // تنتهي الجلسة بعد 15 دقيقة
-        });
+            expiresAt: new Date(Date.now() + 15 * 60000)
+        }, { merge: true }); // merge: true لعدم مسح البيانات القديمة إن وجدت
 
+        
         // 5. البحث عن حساب الولاء لعرض النقاط
         const lq = query(
             collection(db, "loyalty_customers"), 
