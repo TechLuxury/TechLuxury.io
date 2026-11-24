@@ -1,23 +1,28 @@
 import { auth, db } from '../../core/firebase-config.js';
 import { getCurrentOrganization } from '../../core/auth.js';
 import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-import { collection, query, where, getDocs, getDoc, onSnapshot, doc, serverTimestamp, runTransaction } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+import {
+    collection, query, where, getDocs, onSnapshot, doc, serverTimestamp, runTransaction
+} from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
 const urlParams = new URLSearchParams(window.location.search);
 const cardId = urlParams.get('id');
-
 let currentOrg = null;
-let selectedSessionId = null;
-let selectedCustomerName = null;
-let unsubscribeQueue = null;
+let allCustomers = []; // لحفظ قائمة الزبائن للبحث السريع
+let selectedCustomer = null;
 
 const backToDashEl = document.getElementById('backToDash');
 if (backToDashEl && cardId) backToDashEl.href = `dashboard.html?id=${cardId}`;
 
-onAuthStateChanged(auth, async (user) => {
-    if (unsubscribeQueue) { unsubscribeQueue(); unsubscribeQueue = null; }
-    currentOrg = null;
+// دالة مساعدة لتوحيد أرقام الهواتف (إزالة المسافات والرموز وتوحيد 962 و 07)
+function normalizePhone(phone) {
+    if (!phone) return '';
+    let p = String(phone).replace(/\D/g, '');
+    if (p.startsWith('962')) p = '0' + p.substring(3);
+    return p;
+}
 
+onAuthStateChanged(auth, async (user) => {
     if (!user) { window.location.href = "../../auth/login.html"; return; }
 
     try {
@@ -26,198 +31,177 @@ onAuthStateChanged(auth, async (user) => {
         if (!orgData || !orgData.orgId || !cardId) { alert("بيانات غير صالحة"); return; }
 
         currentOrg = orgData;
-        listenToQueue();
+        loadAllCustomers(); // جلب الزبائن للبدء بالبحث
     } catch (error) {
-        console.error("Auth / Organization initialization error:", error);
+        console.error("Auth error:", error);
     }
 });
 
-function listenToQueue() {
+// 1. جلب جميع زبائن المطعم في الخلفية (للبحث الفوري)
+function loadAllCustomers() {
     const q = query(
-        collection(db, "pos_sessions"),
-        where("organizationId", "==", currentOrg.orgId),
-        where("cardId", "==", cardId),
-        where("status", "==", "pending")
+        collection(db, "loyalty_customers"),
+        where("organizationId", "==", currentOrg.orgId)
     );
-
-    unsubscribeQueue = onSnapshot(q, (snapshot) => {
-        const list = document.getElementById('queueList');
-        if (!list) return;
-
-        const sessions = [];
-        const now = Date.now();
-
-        snapshot.forEach((docSnap) => {
-            const data = docSnap.data();
-            // ✅ تجاهل الجلسات المنتهية الصلاحية
-            if (data.expiresAt && data.expiresAt.toMillis() < now) return;
-            sessions.push({ id: docSnap.id, ...data });
+    
+    onSnapshot(q, (snapshot) => {
+        allCustomers = [];
+        snapshot.forEach(doc => {
+            allCustomers.push({ id: doc.id, ...doc.data() });
         });
-
-        if (sessions.length === 0) {
-            list.innerHTML = '<p class="text-muted text-center">لا يوجد زبائن في الانتظار حالياً...</p>';
-            return;
-        }
-
-        // ترتيب الجلسات
-        sessions.sort((a, b) => (b.createdAt?.toMillis() || 0) - (a.createdAt?.toMillis() || 0));
-
-        // ✅ إعادة بناء القائمة بالكامل (تمنع التكرار التراكمي)
-        list.innerHTML = sessions.map((session) => {
-            const time = session.createdAt ? new Date(session.createdAt.toMillis()).toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' }) : 'الآن';
-            const phoneDisplay = session.customerPhone ? ` - ${session.customerPhone.slice(-4)}***` : '';
-            const safeName = String(session.customerName || 'عميل').replace(/'/g, "\\'");
-            const safeUid = String(session.customerId || '').replace(/'/g, "\\'");
-
-            return `
-                <div class="list-item" onclick="openInvoiceModal('${session.id}', '${safeName}', '${safeUid}')" style="cursor: pointer; border-right: 4px solid var(--primary);">
-                    <div>
-                        <strong style="font-size: 1.1rem;">${session.customerName || 'عميل'}</strong>
-                        <span class="text-muted" style="font-size: 0.8rem;">${phoneDisplay}</span>
-                    </div>
-                    <div style="font-size: 0.8rem; color: var(--text-muted);">
-                        <i class="fa-regular fa-clock"></i> ${time}
-                    </div>
-                </div>
-            `;
-        }).join('');
-    }, (error) => console.error("Queue error:", error));
+        console.log(`Loaded ${allCustomers.length} customers for search.`);
+    }, (error) => {
+        console.error("Error loading customers:", error);
+    });
 }
 
-window.openInvoiceModal = async (sessionId, customerName, customerUid) => {
-    selectedSessionId = sessionId;
-    selectedCustomerName = customerName;
-    
-    document.getElementById('selectedCustomerName').innerText = `العميل: ${customerName}`;
-    document.getElementById('invoiceForm').reset();
-    document.getElementById('pointsToRedeem').value = "0";
-    document.getElementById('expectedPoints').innerText = '0';
-    document.getElementById('availablePointsDisplay').innerText = '...';
+// 2. واجهة البحث
+const searchInput = document.getElementById('searchInput');
+const searchResults = document.getElementById('searchResults');
 
-    // ✅ الإصلاح: استخدام getDoc بدلاً من getDocs
-    if (customerUid && currentOrg && currentOrg.orgId) {
-        const loyaltyDocId = `${currentOrg.orgId}_${customerUid}`;
-        try {
-            const loyaltySnap = await getDoc(doc(db, "loyalty_customers", loyaltyDocId));
-            if (loyaltySnap.exists()) {
-                document.getElementById('availablePointsDisplay').innerText = loyaltySnap.data().totalPoints || 0;
-            } else {
-                document.getElementById('availablePointsDisplay').innerText = '0';
-            }
-        } catch (error) {
-            console.error("Error fetching points:", error);
-            document.getElementById('availablePointsDisplay').innerText = 'خطأ';
-        }
-    } else {
-        document.getElementById('availablePointsDisplay').innerText = '0';
+searchInput.addEventListener('input', (e) => {
+    const term = e.target.value.trim().toLowerCase();
+    if (term.length < 2) {
+        searchResults.innerHTML = '<p class="text-muted text-center">ابدأ بكتابة حرفين على الأقل للبحث...</p>';
+        return;
     }
-    
-    document.getElementById('invoiceModal').style.display = 'flex';
+
+    const searchPhone = normalizePhone(term); // في حال كان يبحث برقم هاتف
+
+    // فلترة الزبائن
+    const filtered = allCustomers.filter(cust => {
+        const custName = (cust.name || '').toLowerCase();
+        const custPhone = normalizePhone(cust.customerPhone);
+
+        // بحث بالاسم (يدعم البحث الجزئي)
+        const matchName = custName.includes(term);
+        
+        // بحث بالهاتف (يدعم البحث الجزئي)
+        const matchPhone = custPhone.includes(searchPhone);
+
+        return matchName || matchPhone;
+    });
+
+    renderSearchResults(filtered);
+});
+
+function renderSearchResults(results) {
+    if (results.length === 0) {
+        searchResults.innerHTML = '<p class="text-muted text-center">لا توجد نتائج مطابقة.</p>';
+        return;
+    }
+
+    searchResults.innerHTML = results.map(cust => {
+        const phoneEnd = cust.customerPhone ? `*** ${String(cust.customerPhone).slice(-3)}` : 'لا يوجد هاتف';
+        return `
+            <div class="list-item" onclick="selectCustomer('${cust.id}')" style="cursor: pointer; border-right: 4px solid var(--primary); background: var(--bg);">
+                <div>
+                    <strong style="font-size: 1.1rem; color: var(--text);">${cust.name}</strong>
+                    <div style="font-size: 0.85rem; color: var(--text-muted);">${phoneEnd}</div>
+                </div>
+                <div style="text-align: left;">
+                    <span style="font-weight: bold; color: #f59e0b;">${cust.totalPoints || 0} نقطة</span>
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+
+// 3. اختيار الزبون
+window.selectCustomer = (customerId) => {
+    selectedCustomer = allCustomers.find(c => c.id === customerId);
+    if (!selectedCustomer) return;
+
+    document.getElementById('searchSection').style.display = 'none';
+    document.getElementById('addPointsSection').style.display = 'block';
+    document.getElementById('addPointsForm').reset();
+    document.getElementById('expectedPoints').innerText = '0';
+
+    document.getElementById('selectedCustName').innerText = selectedCustomer.name;
+    document.getElementById('selectedCustPhone').innerText = selectedCustomer.customerPhone ? `*** ${String(selectedCustomer.customerPhone).slice(-3)}` : 'لا يوجد هاتف';
+    document.getElementById('selectedCustPoints').innerText = selectedCustomer.totalPoints || 0;
 };
 
-window.closeInvoiceModal = () => { document.getElementById('invoiceModal').style.display = 'none'; };
+window.cancelSelection = () => {
+    selectedCustomer = null;
+    document.getElementById('searchSection').style.display = 'block';
+    document.getElementById('addPointsSection').style.display = 'none';
+    searchInput.value = '';
+    searchResults.innerHTML = '<p class="text-muted text-center">ابدأ بكتابة الاسم أو رقم الهاتف للبحث...</p>';
+};
 
-function calculateExpectedPoints() {
-    const amount = parseFloat(document.getElementById('invoiceAmount').value) || 0;
-    const redeem = parseInt(document.getElementById('pointsToRedeem').value) || 0;
-    const earned = Math.floor(amount * 10);
-    document.getElementById('expectedPoints').innerText = Math.max(0, earned - redeem);
-}
-document.getElementById('invoiceAmount').addEventListener('input', calculateExpectedPoints);
-document.getElementById('pointsToRedeem').addEventListener('input', calculateExpectedPoints);
+// 4. حساب النقاط المتوقعة
+document.getElementById('orderAmount').addEventListener('input', (e) => {
+    const amount = parseFloat(e.target.value) || 0;
+    document.getElementById('expectedPoints').innerText = Math.floor(amount * 10); // قاعدة: كل 1 دينار = 10 نقاط
+});
 
-document.getElementById('invoiceForm').addEventListener('submit', async (e) => {
+// 5. إضافة النقاط (المعاملة الذرية مع منع التكرار)
+document.getElementById('addPointsForm').addEventListener('submit', async (e) => {
     e.preventDefault();
-
-    if (!currentOrg?.orgId || !auth.currentUser?.uid || !selectedSessionId) {
-        return alert("❌ الجلسة غير جاهزة.");
-    }
+    if (!selectedCustomer || !currentOrg) return;
 
     const btn = document.getElementById('confirmBtn');
     btn.disabled = true;
     btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> جاري المعالجة...';
 
-    const amount = parseFloat(document.getElementById('invoiceAmount').value);
-    const ref = document.getElementById('invoiceRef').value;
-    const pointsToRedeem = parseInt(document.getElementById('pointsToRedeem').value) || 0;
-    const pointsEarned = Math.floor(amount * 10);
+    const amount = parseFloat(document.getElementById('orderAmount').value);
+    const orderRefInput = document.getElementById('orderRef').value.trim();
+    const pointsToAdd = Math.floor(amount * 10);
+
+    // ✅ منع التكرار: إذا لم يدخل الموظف رقم فاتورة، ننشئ واحداً تلقائياً مبني على الوقت
+    // إذا أدخل رقم فاتورة، نستخدمه كمعرف للمعاملة (لا يمكن تكراره)
+    const orderId = orderRefInput ? `REF-${orderRefInput}` : `TXN-${Date.now()}`;
+    
+    // استخدام الـ ID الثابت للحساب لضمان التحديث الصحيح
+    const loyaltyDocId = `${currentOrg.orgId}_${selectedCustomer.customerId}`;
+    const loyaltyRef = doc(db, "loyalty_customers", loyaltyDocId);
+    const txnRef = doc(db, "loyalty_transactions", orderId);
 
     try {
-        const sessionRef = doc(db, "pos_sessions", selectedSessionId);
-
         await runTransaction(db, async (transaction) => {
-            const sessionDoc = await transaction.get(sessionRef);
-            if (!sessionDoc.exists() || sessionDoc.data().status !== 'pending') {
-                throw new Error("الجلسة منتهية أو تمت معالجتها بالفعل.");
+            // 1. التأكد من أن رقم الفاتورة لم يُستخدم مسبقاً
+            const txnDoc = await transaction.get(txnRef);
+            if (txnDoc.exists()) {
+                throw new Error("رقم الفاتورة هذا تم استخدامه مسبقاً! لا يمكن إضافة النقاط مرتين لنفس الفاتورة.");
             }
 
-            const sessionData = sessionDoc.data();
-            const customerUid = sessionData.customerId;
+            // 2. جلب أحدث رصيد للعميل
+            const custDoc = await transaction.get(loyaltyRef);
+            if (!custDoc.exists()) throw new Error("حساب الزبون غير موجود.");
 
-            if (!customerUid) throw new Error("هذا الزبون غير مسجل دخول.");
+            const currentPoints = custDoc.data().totalPoints || 0;
+            const newBalance = currentPoints + pointsToAdd;
 
-            // ✅ استخدام المعرف الثابت لحساب الولاء
-            const loyaltyDocId = `${currentOrg.orgId}_${customerUid}`;
-            const loyaltyRef = doc(db, "loyalty_customers", loyaltyDocId);
-            const loyaltySnap = await transaction.get(loyaltyRef);
-
-            let currentPoints = 0;
-            if (loyaltySnap.exists()) {
-                currentPoints = loyaltySnap.data().totalPoints || 0;
-                if (pointsToRedeem > currentPoints) {
-                    throw new Error(`رصيد العميل غير كافٍ. الرصيد المتاح: ${currentPoints} نقطة.`);
-                }
-                transaction.update(loyaltyRef, {
-                    totalPoints: currentPoints - pointsToRedeem + pointsEarned,
-                    updatedAt: serverTimestamp()
-                });
-            } else {
-                if (pointsToRedeem > 0) throw new Error("لا يمكن خصم نقاط لعميل ليس لديه رصيد.");
-                transaction.set(loyaltyRef, {
-                    organizationId: currentOrg.orgId,
-                    cardId: cardId,
-                    customerId: customerUid,
-                    name: sessionData.customerName,
-                    customerPhone: sessionData.customerPhone || null,
-                    totalPoints: pointsEarned,
-                    createdAt: serverTimestamp(),
-                    updatedAt: serverTimestamp()
-                });
-            }
-
-            // ✅ إنشاء طلب (Order) مستقل لكل عملية
-            const orderId = `ORD-${Date.now()}-${Math.floor(Math.random()*1000)}`;
-            const txnRef = doc(db, "loyalty_transactions", orderId);
-            transaction.set(txnRef, {
-                orderId: orderId, // معرف مستقل للطلب
-                organizationId: currentOrg.orgId,
-                cardId: cardId,
-                customerId: loyaltyDocId,
-                authCustomerId: customerUid,
-                cashierId: auth.currentUser.uid,
-                invoiceAmount: amount,
-                invoiceRef: ref || null,
-                pointsEarned: pointsEarned,
-                pointsRedeemed: pointsToRedeem,
-                type: pointsToRedeem > 0 ? 'mix' : 'earn',
-                timestamp: serverTimestamp()
+            // 3. تحديث رصيد العميل
+            transaction.update(loyaltyRef, {
+                totalPoints: newBalance,
+                updatedAt: serverTimestamp()
             });
 
-            // إكمال الجلسة (الزيارة)
-            transaction.update(sessionRef, {
-                status: 'completed',
-                completedAt: serverTimestamp(),
-                completedBy: auth.currentUser.uid
+            // 4. تسجيل المعاملة في السجل
+            transaction.set(txnRef, {
+                transactionId: orderId,
+                organizationId: currentOrg.orgId,
+                cardId: cardId,
+                customerId: loyaltyDocId, // ربط بالحساب الثابت
+                authCustomerId: selectedCustomer.customerId,
+                cashierId: auth.currentUser.uid,
+                amount: amount,
+                pointsEarned: pointsToAdd,
+                type: 'earn',
+                timestamp: serverTimestamp()
             });
         });
 
-        alert("✅ تمت إضافة الطلب والنقاط بنجاح!");
-        closeInvoiceModal();
+        alert(`✅ تمت إضافة ${pointsToAdd} نقطة بنجاح!\nالرصيد الجديد: ${selectedCustomer.totalPoints + pointsToAdd} نقطة.`);
+        cancelSelection(); // العودة لشاشة البحث
+
     } catch (error) {
-        console.error("Error:", error);
+        console.error("Transaction error:", error);
         alert("❌ خطأ: " + error.message);
     } finally {
         btn.disabled = false;
-        btn.innerText = 'تأكيد العملية';
+        btn.innerText = 'تأكيد وإضافة النقاط';
     }
 });
