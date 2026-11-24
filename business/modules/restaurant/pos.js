@@ -107,9 +107,10 @@ function listenToQueue() {
                 const cleanPhone = normalizePhone(session.customerPhone);
                 const phoneDisplay = cleanPhone ? ` - ${cleanPhone.slice(-4)}***` : '';
                 const safeName = String(session.customerName || 'عميل').replace(/'/g, "\\'");
+                const customerUid = session.customerId || '';
 
                 return `
-                    <div class="list-item" onclick="openInvoiceModal('${session.id}', '${safeName}')" style="cursor: pointer; border-right: 4px solid var(--primary);">
+                    <div class="list-item" onclick="openInvoiceModal('${session.id}', '${safeName}', '${customerUid}')" style="cursor: pointer; border-right: 4px solid var(--primary);">
                         <div>
                             <strong style="font-size: 1.1rem;">${session.customerName || 'عميل'}</strong>
                             <span class="text-muted" style="font-size: 0.8rem;">${phoneDisplay}</span>
@@ -134,7 +135,7 @@ function listenToQueue() {
 window.openInvoiceModal = async (sessionId, customerName, customerUid) => {
     selectedSessionId = sessionId;
     selectedCustomerName = customerName;
-    
+
     document.getElementById('selectedCustomerName').innerText = `العميل: ${customerName}`;
     document.getElementById('invoiceForm').reset();
     document.getElementById('pointsToRedeem').value = "0";
@@ -144,7 +145,8 @@ window.openInvoiceModal = async (sessionId, customerName, customerUid) => {
     // جلب رصيد النقاط الخاص بالعميل
     let balance = 0;
     if (customerUid) {
-        const q = query(collection(db, "loyalty_customers"), 
+        const q = query(
+            collection(db, "loyalty_customers"),
             where("organizationId", "==", currentOrg.orgId),
             where("customerId", "==", customerUid)
         );
@@ -153,7 +155,7 @@ window.openInvoiceModal = async (sessionId, customerName, customerUid) => {
             balance = snap.docs[0].data().totalPoints || 0;
         }
     }
-    
+
     document.getElementById('availablePointsDisplay').innerText = balance;
     document.getElementById('invoiceModal').style.display = 'flex';
 };
@@ -162,14 +164,21 @@ window.closeInvoiceModal = () => {
     document.getElementById('invoiceModal').style.display = 'none';
 };
 
-// حساب النقاط المتوقعة أثناء الكتابة
-document.getElementById('invoiceAmount').addEventListener('input', (e) => {
-    const amount = parseFloat(e.target.value) || 0;
-    const points = Math.floor(amount * 10); // قاعدة: كل 1 دينار = 10 نقاط
-    document.getElementById('expectedPoints').innerText = points;
-});
+// حساب النقاط المكتسبة (صافي) أثناء الكتابة
+function calculateExpectedPoints() {
+    const amount = parseFloat(document.getElementById('invoiceAmount').value) || 0;
+    const redeem = parseInt(document.getElementById('pointsToRedeem').value) || 0;
 
-// تأكيد الفاتورة وإضافة النقاط
+    const earned = Math.floor(amount * 10);
+    const netEarned = Math.max(0, earned - redeem); // لا يمكن أن تكون النقاط المكتسبة بالسالب
+
+    document.getElementById('expectedPoints').innerText = netEarned;
+}
+
+document.getElementById('invoiceAmount').addEventListener('input', calculateExpectedPoints);
+document.getElementById('pointsToRedeem').addEventListener('input', calculateExpectedPoints);
+
+// تأكيد الفاتورة وإضافة/خصم النقاط
 document.getElementById('invoiceForm').addEventListener('submit', async (e) => {
     e.preventDefault();
 
@@ -184,12 +193,11 @@ document.getElementById('invoiceForm').addEventListener('submit', async (e) => {
 
     const amount = parseFloat(document.getElementById('invoiceAmount').value);
     const ref = document.getElementById('invoiceRef').value;
-    const pointsToAdd = Math.floor(amount * 10); // يجب جلبها من إعدادات المطعم لاحقاً
 
     try {
         const sessionRef = doc(db, "pos_sessions", selectedSessionId);
 
-                await runTransaction(db, async (transaction) => {
+        await runTransaction(db, async (transaction) => {
             const sessionDoc = await transaction.get(sessionRef);
             if (!sessionDoc.exists() || sessionDoc.data().status !== 'pending') {
                 throw new Error("الجلسة منتهية أو تمت معالجتها بالفعل.");
@@ -197,12 +205,17 @@ document.getElementById('invoiceForm').addEventListener('submit', async (e) => {
 
             const sessionData = sessionDoc.data();
             const cleanPhone = normalizePhone(sessionData.customerPhone) || null;
+            const pointsToRedeem = parseInt(document.getElementById('pointsToRedeem').value) || 0;
+            const pointsEarned = Math.floor(amount * 10);
 
-            // 1. البحث عن حساب الولاء لهذا المطعم تحديداً
+            if (pointsToRedeem < 0) {
+                throw new Error("قيمة النقاط المخصومة لا يمكن أن تكون سالبة.");
+            }
+
+            // 1. البحث عن حساب الولاء
             let loyaltyCustomerRef;
             let foundLoyaltyDoc = null;
 
-            // أولاً: البحث باستخدام UID الزبون (إذا كان مسجلاً وموجوداً في الجلسة)
             if (sessionData.customerId) {
                 const lqUid = query(
                     collection(db, "loyalty_customers"),
@@ -210,12 +223,9 @@ document.getElementById('invoiceForm').addEventListener('submit', async (e) => {
                     where("customerId", "==", sessionData.customerId)
                 );
                 const lSnapUid = await getDocs(lqUid);
-                if (!lSnapUid.empty) {
-                    foundLoyaltyDoc = lSnapUid.docs[0];
-                }
+                if (!lSnapUid.empty) foundLoyaltyDoc = lSnapUid.docs[0];
             }
 
-            // ثانياً: إذا لم نجده بالـ UID، نبحث برقم الهاتف (كاحتياط)
             if (!foundLoyaltyDoc && cleanPhone) {
                 const lqPhone = query(
                     collection(db, "loyalty_customers"),
@@ -223,53 +233,63 @@ document.getElementById('invoiceForm').addEventListener('submit', async (e) => {
                     where("customerPhone", "==", cleanPhone)
                 );
                 const lSnapPhone = await getDocs(lqPhone);
-                if (!lSnapPhone.empty) {
-                    foundLoyaltyDoc = lSnapPhone.docs[0];
-                }
+                if (!lSnapPhone.empty) foundLoyaltyDoc = lSnapPhone.docs[0];
             }
 
-            // إذا وجدنا الحساب (سواء بالـ UID أو بالهاتف)
+            let currentPoints = 0;
+
             if (foundLoyaltyDoc) {
                 loyaltyCustomerRef = doc(db, "loyalty_customers", foundLoyaltyDoc.id);
-                const currentPoints = foundLoyaltyDoc.data().totalPoints || 0;
-                
-                // تحديث النقاط وربط الـ UID إذا لم يكن مربوطاً
+                currentPoints = foundLoyaltyDoc.data().totalPoints || 0;
+            } else {
+                loyaltyCustomerRef = doc(collection(db, "loyalty_customers"));
+                currentPoints = 0;
+            }
+
+            // التحقق من كفاية الرصيد للخصم
+            if (pointsToRedeem > currentPoints) {
+                throw new Error(`رصيد العميل غير كافٍ للخصم. الرصيد المتاح: ${currentPoints} نقطة.`);
+            }
+
+            // الرصيد النهائي = الرصيد الحالي - المسحوب + المكتسب
+            const finalBalance = currentPoints - pointsToRedeem + pointsEarned;
+
+            if (foundLoyaltyDoc) {
                 transaction.update(loyaltyCustomerRef, {
-                    totalPoints: currentPoints + pointsToAdd,
+                    totalPoints: finalBalance,
                     customerId: foundLoyaltyDoc.data().customerId || sessionData.customerId || null,
                     updatedAt: serverTimestamp()
                 });
             } else {
-                // عميل جديد في هذا المطعم، ننشئ حساب ولاء جديد
-                loyaltyCustomerRef = doc(collection(db, "loyalty_customers"));
                 transaction.set(loyaltyCustomerRef, {
                     organizationId: currentOrg.orgId,
                     cardId: cardId,
-                    customerId: sessionData.customerId || null, // ربطه بالـ UID إذا وجد
+                    customerId: sessionData.customerId || null,
                     name: sessionData.customerName,
                     customerPhone: cleanPhone,
-                    totalPoints: pointsToAdd,
+                    totalPoints: finalBalance,
                     createdAt: serverTimestamp(),
                     updatedAt: serverTimestamp()
                 });
             }
 
-            // 2. تسجيل المعاملة في السجل
+            // 2. تسجيل المعاملة (نوع mix يعني فيها كسب وخصم)
             const txnRef = doc(collection(db, "loyalty_transactions"));
             transaction.set(txnRef, {
                 organizationId: currentOrg.orgId,
                 cardId: cardId,
-                customerId: loyaltyCustomerRef.id, // معرف حساب الولاء
-                authCustomerId: sessionData.customerId || null, // معرف المصادقة
+                customerId: loyaltyCustomerRef.id,
+                authCustomerId: sessionData.customerId || null,
                 cashierId: auth.currentUser.uid,
                 invoiceAmount: amount,
                 invoiceRef: ref || null,
-                pointsEarned: pointsToAdd,
-                type: 'earn',
+                pointsEarned: pointsEarned,
+                pointsRedeemed: pointsToRedeem,
+                type: pointsToRedeem > 0 ? 'mix' : 'earn',
                 timestamp: serverTimestamp()
             });
 
-            // 3. تحديث الجلسة لتصبح مكتملة (لتختفي من الطابور)
+            // 3. تحديث الجلسة
             transaction.update(sessionRef, {
                 status: 'completed',
                 loyaltyCustomerId: loyaltyCustomerRef.id,
@@ -278,7 +298,7 @@ document.getElementById('invoiceForm').addEventListener('submit', async (e) => {
             });
         });
 
-        alert("✅ تمت إضافة النقاط بنجاح!");
+        alert("✅ تم تنفيذ العملية بنجاح!");
         closeInvoiceModal();
 
     } catch (error) {
@@ -286,6 +306,6 @@ document.getElementById('invoiceForm').addEventListener('submit', async (e) => {
         alert("❌ خطأ: " + error.message);
     } finally {
         btn.disabled = false;
-        btn.innerText = 'تأكيد وإضافة النقاط';
+        btn.innerText = 'تأكيد العملية';
     }
 });
