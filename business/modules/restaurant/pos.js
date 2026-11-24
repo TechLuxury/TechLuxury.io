@@ -204,82 +204,57 @@ document.getElementById('invoiceForm').addEventListener('submit', async (e) => {
             }
 
             const sessionData = sessionDoc.data();
-            const cleanPhone = normalizePhone(sessionData.customerPhone) || null;
+            const customerUid = sessionData.customerId;
+            
+            if (!customerUid) {
+                throw new Error("هذا الزبون غير مسجل دخول. لا يمكن إضافة النقاط لحساب غير معروف.");
+            }
+
+            // ✅ 1. استخدام معرف ثابت لحساب الولاء (organizationId + customerUid)
+            const loyaltyDocId = `${currentOrg.orgId}_${customerUid}`;
+            const loyaltyCustomerRef = doc(db, "loyalty_customers", loyaltyDocId);
+            const loyaltyDoc = await transaction.get(loyaltyCustomerRef);
+
             const pointsToRedeem = parseInt(document.getElementById('pointsToRedeem').value) || 0;
             const pointsEarned = Math.floor(amount * 10);
 
-            if (pointsToRedeem < 0) {
-                throw new Error("قيمة النقاط المخصومة لا يمكن أن تكون سالبة.");
-            }
-
-            // 1. البحث عن حساب الولاء
-            let loyaltyCustomerRef;
-            let foundLoyaltyDoc = null;
-
-            if (sessionData.customerId) {
-                const lqUid = query(
-                    collection(db, "loyalty_customers"),
-                    where("organizationId", "==", currentOrg.orgId),
-                    where("customerId", "==", sessionData.customerId)
-                );
-                const lSnapUid = await getDocs(lqUid);
-                if (!lSnapUid.empty) foundLoyaltyDoc = lSnapUid.docs[0];
-            }
-
-            if (!foundLoyaltyDoc && cleanPhone) {
-                const lqPhone = query(
-                    collection(db, "loyalty_customers"),
-                    where("organizationId", "==", currentOrg.orgId),
-                    where("customerPhone", "==", cleanPhone)
-                );
-                const lSnapPhone = await getDocs(lqPhone);
-                if (!lSnapPhone.empty) foundLoyaltyDoc = lSnapPhone.docs[0];
-            }
-
             let currentPoints = 0;
 
-            if (foundLoyaltyDoc) {
-                loyaltyCustomerRef = doc(db, "loyalty_customers", foundLoyaltyDoc.id);
-                currentPoints = foundLoyaltyDoc.data().totalPoints || 0;
-            } else {
-                loyaltyCustomerRef = doc(collection(db, "loyalty_customers"));
-                currentPoints = 0;
-            }
-
-            // التحقق من كفاية الرصيد للخصم
-            if (pointsToRedeem > currentPoints) {
-                throw new Error(`رصيد العميل غير كافٍ للخصم. الرصيد المتاح: ${currentPoints} نقطة.`);
-            }
-
-            // الرصيد النهائي = الرصيد الحالي - المسحوب + المكتسب
-            const finalBalance = currentPoints - pointsToRedeem + pointsEarned;
-
-            if (foundLoyaltyDoc) {
+            if (loyaltyDoc.exists()) {
+                currentPoints = loyaltyDoc.data().totalPoints || 0;
+                if (pointsToRedeem > currentPoints) {
+                    throw new Error(`رصيد العميل غير كافٍ. الرصيد المتاح: ${currentPoints} نقطة.`);
+                }
+                // تحديث الحساب الموجود
                 transaction.update(loyaltyCustomerRef, {
-                    totalPoints: finalBalance,
-                    customerId: foundLoyaltyDoc.data().customerId || sessionData.customerId || null,
+                    totalPoints: currentPoints - pointsToRedeem + pointsEarned,
+                    name: sessionData.customerName, // تحديث الاسم في حال تغيره
                     updatedAt: serverTimestamp()
                 });
             } else {
+                if (pointsToRedeem > 0) {
+                    throw new Error("لا يمكن خصم نقاط لعميل جديد ليس لديه رصيد.");
+                }
+                // إنشاء حساب ولاء لأول مرة بمعرف ثابت
                 transaction.set(loyaltyCustomerRef, {
                     organizationId: currentOrg.orgId,
                     cardId: cardId,
-                    customerId: sessionData.customerId || null,
+                    customerId: customerUid,
                     name: sessionData.customerName,
-                    customerPhone: cleanPhone,
-                    totalPoints: finalBalance,
+                    customerPhone: sessionData.customerPhone || null,
+                    totalPoints: pointsEarned,
                     createdAt: serverTimestamp(),
                     updatedAt: serverTimestamp()
                 });
             }
 
-            // 2. تسجيل المعاملة (نوع mix يعني فيها كسب وخصم)
-            const txnRef = doc(collection(db, "loyalty_transactions"));
+            // ✅ 2. تسجيل المعاملة بمعرف ثابت (sessionId) لمنع التكرار إذا ضغط الموظف مرتين
+            const txnRef = doc(db, "loyalty_transactions", `txn_${selectedSessionId}`);
             transaction.set(txnRef, {
                 organizationId: currentOrg.orgId,
                 cardId: cardId,
-                customerId: loyaltyCustomerRef.id,
-                authCustomerId: sessionData.customerId || null,
+                customerId: loyaltyDocId,
+                authCustomerId: customerUid,
                 cashierId: auth.currentUser.uid,
                 invoiceAmount: amount,
                 invoiceRef: ref || null,
@@ -289,14 +264,14 @@ document.getElementById('invoiceForm').addEventListener('submit', async (e) => {
                 timestamp: serverTimestamp()
             });
 
-            // 3. تحديث الجلسة
+            // ✅ 3. تحديث الجلسة لتصبح مكتملة
             transaction.update(sessionRef, {
                 status: 'completed',
-                loyaltyCustomerId: loyaltyCustomerRef.id,
                 completedAt: serverTimestamp(),
                 completedBy: auth.currentUser.uid
             });
         });
+        
 
         alert("✅ تم تنفيذ العملية بنجاح!");
         closeInvoiceModal();
