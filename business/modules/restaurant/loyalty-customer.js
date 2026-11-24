@@ -89,17 +89,32 @@ async function loadTransactions(loyaltyCustomerId) {
             return;
         }
         
-        let html = '';
+                let html = '';
         snap.forEach(doc => {
             const txn = doc.data();
             const date = txn.timestamp ? new Date(txn.timestamp.toMillis()).toLocaleDateString('ar-EG') : '';
-            html += `
-                <div style="display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #e2e8f0;">
-                    <div><span style="color: #64748b; font-size: 0.9rem;">${date}</span></div>
-                    <div style="font-weight: bold; color: #22c55e;">+${txn.pointsEarned} نقطة</div>
-                </div>
-            `;
+            
+            // عرض النقاط المكتسبة
+            if (txn.pointsEarned > 0) {
+                html += `
+                    <div style="display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #e2e8f0;">
+                        <div><span style="color: #64748b; font-size: 0.9rem;">${date} (شراء)</span></div>
+                        <div style="font-weight: bold; color: #22c55e;">+${txn.pointsEarned} نقطة</div>
+                    </div>
+                `;
+            }
+            
+            // عرض النقاط المخصومة
+            if (txn.pointsRedeemed > 0) {
+                html += `
+                    <div style="display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #e2e8f0;">
+                        <div><span style="color: #64748b; font-size: 0.9rem;">${date} (استبدال)</span></div>
+                        <div style="font-weight: bold; color: #ef4444;">-${txn.pointsRedeemed} نقطة</div>
+                    </div>
+                `;
+            }
         });
+        
         list.innerHTML = html;
     } catch (error) {
         console.error("Error loading transactions:", error);
