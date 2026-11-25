@@ -1,5 +1,5 @@
 // ============================================================
-// 💼 Business Card — Luxury Modular Renderer
+// 💼 Business Card — new modular renderer
 // ============================================================
 
 import {
@@ -41,7 +41,7 @@ function formatSocialUrl(platform, value) {
 function getAddressLabel(address) {
     if (!address) return "";
     const str = String(address).trim();
-    if (str.startsWith("http")) return "عرض الموقع على الخريطة";
+    if (str.startsWith("http")) return "📍 عرض الموقع على الخريطة";
     return escapeHtml(str);
 }
 
@@ -56,7 +56,6 @@ function formatMultiline(text) {
 export async function render(card, cardId, key) {
     hideLoading();
     
-    // إعداد المتغيرات
     const phones       = toArray(card.phone);
     const websites     = toArray(card.website);
     const instagrams   = toArray(card.instagram);
@@ -67,30 +66,20 @@ export async function render(card, cardId, key) {
     const googleReview = (card.googleReview || "").trim();
     const logoUrl      = card.logoUrl || "";
 
-    // تجهيز الخدمات (تقسيم النص بناءً على الأسطر لإنشاء بطاقات مستقلة)
+    // ✅ استخراج الخدمات وتقسيمها بناءً على الأسطر
     const servicesArray = card.services 
         ? card.services.split(/\r?\n/).map(s => s.trim()).filter(s => s.length > 0) 
         : [];
 
-    // ── Contact Items ──
     const contacts = [];
 
+    // ✅ إضافة dir="ltr" للأرقام والإيميلات
     phones.forEach(num => contacts.push(`
         <a href="tel:${cleanPhone(num)}" class="tl-business-contact">
             <i class="fa-solid fa-phone"></i>
             <span dir="ltr" class="tl-ltr-text">${escapeHtml(num)}</span>
         </a>
     `));
-
-    whatsapps.forEach(num => {
-        const wa = cleanPhone(num).replace(/^\+/, "");
-        contacts.push(`
-            <a href="https://wa.me/${wa}" target="_blank" class="tl-business-contact">
-                <i class="fa-brands fa-whatsapp"></i>
-                <span dir="ltr" class="tl-ltr-text">${escapeHtml(num)}</span>
-            </a>
-        `);
-    });
 
     emails.forEach(mail => contacts.push(`
         <a href="mailto:${escapeHtml(mail)}" class="tl-business-contact">
@@ -99,95 +88,102 @@ export async function render(card, cardId, key) {
         </a>
     `));
 
+    whatsapps.forEach(num => {
+        const wa = cleanPhone(num).replace(/^\+/, "");
+        contacts.push(`
+            <a href="https://wa.me/${wa}" target="_blank" class="tl-business-contact tl-business-full">
+                <i class="fa-brands fa-whatsapp"></i>
+                <span dir="ltr" class="tl-ltr-text">واتساب: ${escapeHtml(num)}</span>
+            </a>
+        `);
+    });
+
     websites.forEach(site => contacts.push(`
-        <a href="${cleanWebsite(site)}" target="_blank" class="tl-business-contact">
+        <a href="${cleanWebsite(site)}" target="_blank" class="tl-business-contact tl-business-full">
             <i class="fa-solid fa-globe"></i>
             <span dir="ltr" class="tl-ltr-text">${escapeHtml(displayWebsite(site))}</span>
         </a>
     `));
 
     if (googleReview) contacts.push(`
-        <a href="${cleanWebsite(googleReview)}" target="_blank" class="tl-business-contact tl-google-review">
-            <i class="fa-solid fa-star"></i>
-            <span>قيّمنا على Google</span>
+        <a href="${cleanWebsite(googleReview)}" target="_blank"
+           class="tl-business-contact tl-business-full tl-business-google">
+            <i class="fa-solid fa-star"></i><span>قيّمنا على Google</span>
         </a>
     `);
 
     if (card.address) contacts.push(`
-        <a href="https://maps.google.com/?q=${encodeURIComponent(card.address)}" target="_blank" class="tl-business-contact">
-            <i class="fa-solid fa-location-dot"></i>
-            <span>${getAddressLabel(card.address)}</span>
+        <a href="https://maps.google.com/?q=${encodeURIComponent(card.address)}"
+           target="_blank" class="tl-business-contact tl-business-full">
+            <i class="fa-solid fa-location-dot"></i><span>${getAddressLabel(card.address)}</span>
         </a>
     `);
 
-    // ── Social Icons ──
     const socials = [];
-    if (instagrams.length) socials.push(`<a href="${formatSocialUrl("instagram", instagrams[0])}" target="_blank" class="tl-business-social" title="Instagram"><i class="fa-brands fa-instagram"></i></a>`);
-    if (facebooks.length) socials.push(`<a href="${formatSocialUrl("facebook", facebooks[0])}" target="_blank" class="tl-business-social" title="Facebook"><i class="fa-brands fa-facebook-f"></i></a>`);
-    if (linkedins.length) socials.push(`<a href="${formatSocialUrl("linkedin", linkedins[0])}" target="_blank" class="tl-business-social" title="LinkedIn"><i class="fa-brands fa-linkedin-in"></i></a>`);
+    instagrams.forEach(acc => socials.push(`
+        <a href="${formatSocialUrl("instagram", acc)}" target="_blank"
+           class="tl-business-social tl-business-instagram" title="Instagram">
+            <i class="fa-brands fa-instagram"></i>
+        </a>
+    `));
+    facebooks.forEach(fb => socials.push(`
+        <a href="${formatSocialUrl("facebook", fb)}" target="_blank"
+           class="tl-business-social tl-business-facebook" title="Facebook">
+            <i class="fa-brands fa-facebook-f"></i>
+        </a>
+    `));
+    linkedins.forEach(li => socials.push(`
+        <a href="${formatSocialUrl("linkedin", li)}" target="_blank"
+           class="tl-business-social tl-business-linkedin" title="LinkedIn">
+            <i class="fa-brands fa-linkedin-in"></i>
+        </a>
+    `));
 
-    // ── Render HTML ──
     dom.viewContainer.innerHTML = `
-        <div class="tl-luxury-wrapper">
-            <div class="tl-luxury-card">
-                
-                <!-- Header -->
-                <div class="tl-luxury-header">
-                    <div class="tl-luxury-logo-container">
-                        ${logoUrl
-                            ? `<img src="${logoUrl}" class="tl-luxury-logo" alt="Logo">`
-                            : `<div class="tl-luxury-logo-placeholder"><i class="fa-solid fa-user-tie"></i></div>`}
-                    </div>
-                    <h1 class="tl-luxury-name">${escapeHtml(card.name) || "بطاقة عمل"}</h1>
-                    ${card.jobTitle ? `<p class="tl-luxury-job">${escapeHtml(card.jobTitle)}</p>` : ""}
-                    ${card.company ? `<p class="tl-luxury-company">${escapeHtml(card.company)}</p>` : ""}
-                </div>
+        <div class="tl-business-card">
+            <div class="tl-business-logo-wrapper">
+                ${logoUrl
+                    ? `<img src="${logoUrl}" class="tl-business-logo" alt="${escapeHtml(card.name) || "Logo"}">`
+                    : `<div class="tl-business-logo-placeholder"><i class="fa-solid fa-user-tie"></i></div>`}
+            </div>
 
-                <!-- Bio Section -->
-                ${card.bio ? `
-                <div class="tl-luxury-section">
-                    <h2 class="tl-luxury-section-title">النبذة</h2>
-                    <div class="tl-luxury-bio-text">${formatMultiline(card.bio)}</div>
+            <h1 class="tl-business-name">${escapeHtml(card.name) || "بطاقة عمل"}</h1>
+            ${card.jobTitle ? `<p class="tl-business-job">${escapeHtml(card.jobTitle)}</p>` : ""}
+            ${card.company  ? `<p class="tl-business-company">${escapeHtml(card.company)}</p>` : ""}
+
+            <!-- قسم النبذة (بدون صندوق) -->
+            ${card.bio ? `
+                <div class="tl-business-section">
+                    <div class="tl-business-section-title"><i class="fa-solid fa-user"></i> النبذة</div>
+                    <div class="tl-business-section-content">${formatMultiline(card.bio)}</div>
                 </div>` : ""}
 
-                <!-- Services Section -->
-                ${servicesArray.length > 0 ? `
-                <div class="tl-luxury-section">
-                    <h2 class="tl-luxury-section-title">الخدمات</h2>
-                    <div class="tl-luxury-services-grid">
-                        ${servicesArray.map(service => `
-                            <div class="tl-luxury-service-card">
-                                <i class="fa-solid fa-gem tl-service-icon"></i>
-                                <span>${escapeHtml(service)}</span>
+            <!-- قسم الخدمات (بطاقات منفصلة) -->
+            ${servicesArray.length > 0 ? `
+                <div class="tl-business-section">
+                    <div class="tl-business-section-title"><i class="fa-solid fa-briefcase"></i> الخدمات</div>
+                    <div class="tl-business-section-content tl-services-grid">
+                        ${servicesArray.map(srv => `
+                            <div class="tl-service-card">
+                                <i class="fa-solid fa-gem"></i>
+                                <span>${escapeHtml(srv)}</span>
                             </div>
                         `).join("")}
                     </div>
                 </div>` : ""}
 
-                <!-- Contact Section -->
-                ${contacts.length > 0 ? `
-                <div class="tl-luxury-section">
-                    <h2 class="tl-luxury-section-title">معلومات التواصل</h2>
-                    <div class="tl-luxury-contact-grid">
-                        ${contacts.join("")}
-                    </div>
-                </div>` : ""}
-
-                <!-- Socials -->
-                ${socials.length > 0 ? `
-                <div class="tl-luxury-socials">
-                    ${socials.join("")}
-                </div>` : ""}
-
-            </div>
+            ${contacts.length ? `<div class="tl-business-contacts">${contacts.join("")}</div>` : ""}
+            ${socials.length  ? `<div class="tl-business-socials">${socials.join("")}</div>` : ""}
         </div>
     `;
 
     document.title = card.name || card.company || "بطاقة عمل";
 
-    // Increment view counter
+    // Optional: increment view counter (safe — ignore errors)
     try {
         const db = getDb();
-        if (db) await updateDoc(doc(db, "cards", cardId), { views: increment(1) }).catch(() => {});
+        if (db) {
+            await updateDoc(doc(db, "cards", cardId), { views: increment(1) }).catch(() => {});
+        }
     } catch (_) {}
 }
