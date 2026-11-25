@@ -88,12 +88,12 @@ export async function render(card, cardId, key) {
         </a>
     `));
 
-    whatsapps.forEach(num => {
+        whatsapps.forEach(num => {
         const wa = cleanPhone(num).replace(/^\+/, "");
         contacts.push(`
             <a href="https://wa.me/${wa}" target="_blank" class="tl-business-contact tl-business-full">
                 <i class="fa-brands fa-whatsapp"></i>
-                <span dir="ltr" class="tl-ltr-text">واتساب: ${escapeHtml(num)}</span>
+                <span>واتساب: <span dir="ltr" class="tl-ltr-text">${escapeHtml(num)}</span></span>
             </a>
         `);
     });
