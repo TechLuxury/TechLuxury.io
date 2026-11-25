@@ -22,6 +22,7 @@ const firebaseConfig = {
 const probeApp = initializeApp(firebaseConfig, "router-probe");
 const probeDb  = getFirestore(probeApp);
 
+// الأنواع الجديدة التي لها ملفات خاصة
 const NEW_TYPES = new Set(["business", "gift", "memory", "pet"]);
 
 // ────────────────────────────────────────────────────────────
@@ -101,8 +102,17 @@ async function route() {
         return;
     }
 
-    // 2) Decide route
-    const cardType = (card.type || card.cardType || "").toString();
+    // ────────────────────────────────────────────────────────────
+    // ✅ 2) توحيد الأسماء (Mapping) لضمان عمل الكروت المسجلة بالأسماء القديمة
+    // ────────────────────────────────────────────────────────────
+    let rawType = (card.type || card.cardType || "").toString().toLowerCase().trim();
+    let cardType = rawType;
+
+    // إذا كان الكرت مسجلاً بالاسم القديم، قم بتحويله للاسم الجديد
+    if (rawType === "business_card") cardType = "business";
+    if (rawType === "pet_card") cardType = "pet";
+    if (rawType === "memory_book") cardType = "memory";
+
     const isNew = NEW_TYPES.has(cardType);
 
     if (!isNew) {
