@@ -3,10 +3,13 @@
    ============================================================ */
 
 .tl-business-card {
+    /* الحاوية الافتراضية (للهواتف) */
+    width: 92%;
     max-width: 560px;
-    margin: 0 auto;
-    background: #0a0a0a; /* أسود فاخر */
-    border: 1px solid rgba(212, 175, 55, 0.2); /* حدود ذهبية خفيفة */
+    margin-inline: auto;
+    
+    background: #0a0a0a;
+    border: 1px solid rgba(212, 175, 55, 0.2);
     border-radius: 24px;
     padding: clamp(1.5rem, 4vw, 2.25rem) clamp(1rem, 3vw, 1.75rem);
     text-align: center;
@@ -15,7 +18,6 @@
     overflow: hidden;
 }
 
-/* تدرج ذهبي خفيف في الخلفية */
 .tl-business-card::before {
     content: '';
     position: absolute;
@@ -43,7 +45,7 @@
     height: clamp(120px, 26vw, 170px);
     border-radius: 16px;
     object-fit: cover;
-    border: 2px solid #d4af37; /* ذهبي */
+    border: 2px solid #d4af37;
     background: #111;
     display: block;
     box-shadow: 0 0 0 4px rgba(212, 175, 55, 0.1), 0 16px 40px rgba(0,0,0,0.5);
@@ -80,7 +82,6 @@
 .tl-business-name {
     font-size: clamp(1.5rem, 4vw, 1.9rem);
     font-weight: 800;
-    /* تدرج ذهبي للاسم */
     background: linear-gradient(to right, #f3e5ab, #d4af37);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
@@ -108,18 +109,16 @@
 }
 
 /* ============================================================
-   Sections (إزالة الصناديق السوداء التقليدية)
+   Sections
    ============================================================ */
 .tl-business-section {
     text-align: start;
-    /* إزالة الخلفية والحدود القديمة */
     background: transparent;
     border: none;
     padding: 0;
     margin-bottom: 2rem;
 }
 
-/* خط ذهبي أنيق تحت العنوان بدلاً من الصندوق */
 .tl-business-section-title {
     display: flex; align-items: center; gap: 0.5rem;
     color: #d4af37;
@@ -144,7 +143,7 @@
 }
 
 /* ============================================================
-   Services Grid (تنسيق بطاقات الخدمات الجديدة)
+   Services Grid (بطاقات الخدمات)
    ============================================================ */
 .tl-services-grid {
     display: grid;
@@ -162,6 +161,7 @@
     align-items: center;
     gap: 10px;
     transition: all 0.3s ease;
+    height: 100%;
 }
 
 .tl-service-card:hover {
@@ -174,6 +174,7 @@
     color: #d4af37;
     font-size: 1rem;
     opacity: 0.8;
+    flex-shrink: 0;
 }
 
 .tl-service-card span {
@@ -215,7 +216,6 @@
 .tl-business-contact i { flex-shrink: 0; font-size: 1.1rem; color: #d4af37; }
 .tl-business-contact.tl-business-full { grid-column: 1 / -1; }
 
-/* إصلاح اتجاه الأرقام والإيميلات ليكون LTR دائماً */
 .tl-ltr-text {
     direction: ltr !important;
     unicode-bidi: isolate !important;
@@ -259,20 +259,60 @@
 .tl-business-social:hover { transform: translateY(-3px); color: #111; background: #d4af37; border-color: transparent; }
 
 /* ============================================================
-   Responsive
+   Responsive Design (الشاشات الكبيرة)
    ============================================================ */
-@media (max-width: 520px) {
-    .tl-business-contacts { grid-template-columns: 1fr; }
-    .tl-business-logo,
-    .tl-business-logo-placeholder {
-        height: clamp(100px, 28vw, 140px);
+
+/* 1. الشاشات المتوسطة (التابلت) */
+@media (min-width: 768px) {
+    .tl-business-card {
+        max-width: 850px;
+        padding: 3rem 2.5rem;
     }
-    .tl-services-grid { grid-template-columns: 1fr; }
+    
+    /* النبذة لا تمتد كثيراً على الشاشات الكبيرة */
+    .tl-business-section-content {
+        max-width: 700px;
+        margin-inline: auto;
+    }
+
+    /* الخدمات: عمودان */
+    .tl-services-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
 }
 
-@media (prefers-reduced-motion: reduce) {
-    .tl-business-logo:hover { transform: none; }
-    .tl-business-contact:hover,
-    .tl-business-social:hover { transform: none; }
-    .tl-business-google { animation: none; }
+/* 2. الشاشات الكبيرة (الكمبيوتر) */
+@media (min-width: 1024px) {
+    .tl-business-card {
+        max-width: 1200px; /* العرض المطلوب */
+        padding: 4rem 3rem;
+    }
+
+    /* الخدمات: 3 أعمدة */
+    .tl-services-grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+
+    /* توسيع الشعار قليلاً */
+    .tl-business-logo-wrapper {
+        max-width: 450px;
+    }
+    .tl-business-logo, 
+    .tl-business-logo-placeholder {
+        height: 220px;
+    }
+
+    /* التواصل: 3 أعمدة لملء الفراغ */
+    .tl-business-contacts {
+        grid-template-columns: repeat(3, 1fr);
+        max-width: 950px;
+        margin-inline: auto;
+    }
+}
+
+/* 3. الشاشات الكبيرة جداً - 4 أعمدة */
+@media (min-width: 1400px) {
+    .tl-services-grid {
+        grid-template-columns: repeat(4, 1fr);
+    }
 }
